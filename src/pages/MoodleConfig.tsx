@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,12 +29,7 @@ export default function MoodleConfig() {
       }
 
       // Store Moodle credentials
-      const credentials: MoodleCredentials = {
-        url: moodleUrl,
-        token: moodleToken,
-      };
-
-      moodleApi.setCredentials(credentials);
+      moodleApi.setCredentials(moodleUrl, moodleToken);
 
       // Try to fetch courses as a test
       await moodleApi.getCourses();

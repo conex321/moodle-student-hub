@@ -13,6 +13,7 @@ export interface MoodleCourse {
   summaryformat: number;
   startdate: number;
   enddate: number;
+  progress?: number; // Added progress property as optional
 }
 
 export interface MoodleStudent {
@@ -40,4 +41,12 @@ export interface MoodleGrade {
   gradedatesubmitted: number;
   gradedategraded: number;
   feedback: string;
+}
+
+export interface MoodleAssignment {
+  id: number;
+  name: string;
+  duedate: number;
+  courseId?: number; // For mock data
+  description?: string; // For mock data
 }

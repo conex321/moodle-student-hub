@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { MoodleCourse, MoodleAssignment } from '@/types/moodle';
+import { MoodleCourse, MoodleAssignment, MoodleStudent } from '@/types/moodle';
 
 const MOODLE_URL_KEY = 'moodle_url';
 const MOODLE_TOKEN_KEY = 'moodle_token';
@@ -81,6 +81,70 @@ const MOCK_ASSIGNMENTS = [
     duedate: Math.floor(Date.now() / 1000) + 14 * 24 * 60 * 60, // 14 days from now
     courseId: 104,
     description: "Research and write about a significant historical event"
+  }
+];
+
+// Add mock students data
+const MOCK_STUDENTS = [
+  {
+    id: 301,
+    username: "student1",
+    firstname: "John",
+    lastname: "Doe",
+    fullname: "John Doe",
+    email: "john.doe@example.com",
+    department: "Science",
+    firstaccess: Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60,
+    lastaccess: Math.floor(Date.now() / 1000) - 2 * 24 * 60 * 60,
+    profileimageurl: ""
+  },
+  {
+    id: 302,
+    username: "student2",
+    firstname: "Jane",
+    lastname: "Smith",
+    fullname: "Jane Smith",
+    email: "jane.smith@example.com",
+    department: "Arts",
+    firstaccess: Math.floor(Date.now() / 1000) - 25 * 24 * 60 * 60,
+    lastaccess: Math.floor(Date.now() / 1000) - 1 * 24 * 60 * 60,
+    profileimageurl: ""
+  },
+  {
+    id: 303,
+    username: "student3",
+    firstname: "Bob",
+    lastname: "Johnson",
+    fullname: "Bob Johnson",
+    email: "bob.johnson@example.com",
+    department: "Mathematics",
+    firstaccess: Math.floor(Date.now() / 1000) - 20 * 24 * 60 * 60,
+    lastaccess: Math.floor(Date.now() / 1000) - 3 * 24 * 60 * 60,
+    profileimageurl: ""
+  },
+  {
+    id: 304,
+    username: "student4",
+    firstname: "Alice",
+    lastname: "Williams",
+    fullname: "Alice Williams",
+    email: "alice.williams@example.com",
+    department: "Computer Science",
+    firstaccess: Math.floor(Date.now() / 1000) - 18 * 24 * 60 * 60,
+    lastaccess: Math.floor(Date.now() / 1000) - 1 * 24 * 60 * 60,
+    profileimageurl: ""
+  },
+  {
+    id: 305,
+    username: "student5",
+    firstname: "Charlie",
+    lastname: "Brown",
+    fullname: "Charlie Brown",
+    email: "charlie.brown@example.com",
+    department: "Physics",
+    firstaccess: Math.floor(Date.now() / 1000) - 15 * 24 * 60 * 60,
+    lastaccess: Math.floor(Date.now() / 1000) - 4 * 24 * 60 * 60,
+    profileimageurl: ""
   }
 ];
 
@@ -168,7 +232,7 @@ class MoodleApiService {
 
   async getCourses() {
     if (this.isTestEnvironment()) {
-      return Promise.resolve(MOCK_COURSES);
+      return Promise.resolve(MOCK_COURSES as MoodleCourse[]);
     }
     
     try {
@@ -208,6 +272,33 @@ class MoodleApiService {
       return assignments;
     } catch (error) {
       console.error('Error fetching assignments:', error);
+      return [];
+    }
+  }
+
+  async getAllStudents(): Promise<MoodleStudent[]> {
+    if (this.isTestEnvironment()) {
+      return Promise.resolve(MOCK_STUDENTS);
+    }
+    
+    // In a real implementation, we would call the Moodle API here
+    // For now, this is just a placeholder that returns an empty array
+    try {
+      if (!this.moodleUrl || !this.moodleToken) {
+        throw new Error('Moodle URL and token are not set.');
+      }
+      
+      const url = `${this.moodleUrl}/webservice/rest/server.php`;
+      const data = new URLSearchParams({
+        wstoken: this.moodleToken,
+        wsfunction: 'core_user_get_users',
+        moodlewsrestformat: 'json',
+      });
+      
+      const response = await axios.post(url, data);
+      return response.data?.users || [];
+    } catch (error) {
+      console.error('Error fetching students:', error);
       return [];
     }
   }
