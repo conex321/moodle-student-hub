@@ -23,6 +23,11 @@ import TeacherCourses from "./pages/teacher/TeacherCourses";
 import TeacherSchedule from "./pages/teacher/TeacherSchedule";
 import TeacherGrades from "./pages/teacher/TeacherGrades";
 import TeacherSettings from "./pages/teacher/TeacherSettings";
+// Admin Pages
+import AdminAuth from "./pages/AdminAuth";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminMoodleConfig from "./pages/admin/AdminMoodleConfig";
+import AdminUsers from "./pages/admin/AdminUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +63,12 @@ const App = () => (
             <Route path="/teacher/schedule" element={<TeacherSchedule />} />
             <Route path="/teacher/grades" element={<TeacherGrades />} />
             <Route path="/teacher/settings" element={<TeacherSettings />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminAuth />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/moodle-config" element={<AdminMoodleConfig />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
