@@ -51,19 +51,63 @@ const App = () => (
             } />
 
             {/* Student Routes */}
-            <Route path="/student/dashboard" element={<StudentDashboard />} />
-            <Route path="/student/courses" element={<StudentCourses />} />
-            <Route path="/student/calendar" element={<StudentCalendar />} />
-            <Route path="/student/grades" element={<StudentGrades />} />
-            <Route path="/student/profile" element={<StudentProfile />} />
+            <Route path="/student/dashboard" element={
+              <ProtectedRoute>
+                <StudentDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/student/courses" element={
+              <ProtectedRoute>
+                <StudentCourses />
+              </ProtectedRoute>
+            } />
+            <Route path="/student/calendar" element={
+              <ProtectedRoute>
+                <StudentCalendar />
+              </ProtectedRoute>
+            } />
+            <Route path="/student/grades" element={
+              <ProtectedRoute>
+                <StudentGrades />
+              </ProtectedRoute>
+            } />
+            <Route path="/student/profile" element={
+              <ProtectedRoute>
+                <StudentProfile />
+              </ProtectedRoute>
+            } />
             
             {/* Teacher Routes */}
-            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-            <Route path="/teacher/students" element={<TeacherStudents />} />
-            <Route path="/teacher/courses" element={<TeacherCourses />} />
-            <Route path="/teacher/schedule" element={<TeacherSchedule />} />
-            <Route path="/teacher/grades" element={<TeacherGrades />} />
-            <Route path="/teacher/settings" element={<TeacherSettings />} />
+            <Route path="/teacher/dashboard" element={
+              <ProtectedRoute>
+                <TeacherDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/teacher/students" element={
+              <ProtectedRoute>
+                <TeacherStudents />
+              </ProtectedRoute>
+            } />
+            <Route path="/teacher/courses" element={
+              <ProtectedRoute>
+                <TeacherCourses />
+              </ProtectedRoute>
+            } />
+            <Route path="/teacher/schedule" element={
+              <ProtectedRoute>
+                <TeacherSchedule />
+              </ProtectedRoute>
+            } />
+            <Route path="/teacher/grades" element={
+              <ProtectedRoute>
+                <TeacherGrades />
+              </ProtectedRoute>
+            } />
+            <Route path="/teacher/settings" element={
+              <ProtectedRoute>
+                <TeacherSettings />
+              </ProtectedRoute>
+            } />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminAuth />} />
