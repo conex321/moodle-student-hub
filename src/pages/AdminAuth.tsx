@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputWithLabel } from "@/components/ui/input-with-label";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff, LogIn } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function AdminAuth() {
@@ -45,6 +45,35 @@ export default function AdminAuth() {
         variant: "destructive",
         title: "Login failed",
         description: error instanceof Error ? error.message : "Invalid credentials",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTestAdminLogin = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Create a test admin user
+      localStorage.setItem("moodle_hub_admin", JSON.stringify({
+        id: "test-admin-1",
+        email: "admin@test.com",
+        name: "Test Administrator",
+        role: "admin"
+      }));
+      
+      toast({
+        title: "Test admin login successful",
+        description: "Welcome to the Admin Dashboard (Test Environment)",
+      });
+      
+      navigate("/admin/dashboard");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: "Could not log in as test admin.",
       });
     } finally {
       setIsLoading(false);
@@ -104,6 +133,16 @@ export default function AdminAuth() {
               disabled={isLoading}
             >
               {isLoading ? "Logging in..." : "Login"}
+            </Button>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleTestAdminLogin}
+              disabled={isLoading}
+              className="w-full h-12 mt-3 text-primary border-primary hover:bg-primary/10 font-medium rounded-lg transition-all duration-200"
+            >
+              <LogIn className="mr-2 h-4 w-4" /> Test Admin Access
             </Button>
 
             <div className="text-center text-sm">

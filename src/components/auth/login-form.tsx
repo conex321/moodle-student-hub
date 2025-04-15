@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types/auth";
 import { moodleApi } from "@/services/moodleApi";
-import { EyeIcon, EyeOffIcon, LogIn } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LogIn, Settings } from "lucide-react";
 
 interface LoginFormProps {
   userType: UserRole;
@@ -69,6 +69,10 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const goToAdminLogin = () => {
+    navigate("/admin");
   };
 
   const otherUserType = userType === "teacher" ? "Student" : "Faculty";
@@ -166,13 +170,25 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
           Don't have an account? <span className="text-primary hover:underline cursor-pointer">Sign up</span>
         </p>
 
-        <button
-          type="button"
-          onClick={onToggleUserType}
-          className="font-medium text-sm text-blue hover:underline transition-all"
-        >
-          Login as {otherUserType}
-        </button>
+        <div className="flex flex-col items-center space-y-2 w-full">
+          <button
+            type="button"
+            onClick={onToggleUserType}
+            className="font-medium text-sm text-blue hover:underline transition-all"
+          >
+            Login as {otherUserType}
+          </button>
+          
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={goToAdminLogin}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <Settings className="h-4 w-4 mr-1" /> Admin Access
+          </Button>
+        </div>
       </div>
     </form>
   );
