@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types/auth";
 import { moodleApi } from "@/services/moodleApi";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LogIn } from "lucide-react";
 
 interface LoginFormProps {
   userType: UserRole;
@@ -45,6 +45,27 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
       }
     } catch (err) {
       setError("Invalid credentials. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTestLogin = async () => {
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      await login({
+        email: userType === "teacher" ? "teacher@test.com" : "student@test.com",
+        password: "test123",
+        role: userType,
+        rememberMe: false,
+      });
+      
+      // For test environment, we assume Moodle is configured
+      navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+    } catch (err) {
+      setError("Test login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -128,6 +149,16 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
         className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-all duration-200 shadow-sm"
       >
         {isLoading ? "Signing in..." : "Sign in"}
+      </Button>
+
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleTestLogin}
+        disabled={isLoading}
+        className="w-full h-12 mt-3 text-primary border-primary hover:bg-primary/10 font-medium rounded-lg transition-all duration-200"
+      >
+        <LogIn className="mr-2 h-4 w-4" /> Test the Environment
       </Button>
 
       <div className="w-full mt-6 pt-6 border-t border-gray-100 flex flex-col items-center space-y-4">
