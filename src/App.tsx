@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 // Pages
 import Auth from "./pages/Auth";
@@ -66,9 +67,21 @@ const App = () => (
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminAuth />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/moodle-config" element={<AdminMoodleConfig />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/dashboard" element={
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            } />
+            <Route path="/admin/moodle-config" element={
+              <AdminLayout>
+                <AdminMoodleConfig />
+              </AdminLayout>
+            } />
+            <Route path="/admin/users" element={
+              <AdminLayout>
+                <AdminUsers />
+              </AdminLayout>
+            } />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
