@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -18,6 +19,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+				roboto: ['Roboto', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -61,6 +66,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for our app
+				teal: {
+					DEFAULT: '#459B96',
+					light: '#B3C6C4',
+					lighter: '#D8E8E8',
+				},
+				navy: '#2E4765',
+				blue: '#2F7CF0',
+				gray: {
+					light: '#FFFAFA',
+					medium: '#ACA6A6',
+					dark: '#044A46',
 				}
 			},
 			borderRadius: {
