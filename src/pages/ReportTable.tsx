@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { debounce } from 'lodash';
 import axios from 'axios';
 import {
@@ -15,67 +15,94 @@ import {
   Button,
   Box,
   CircularProgress,
-  TextField
+  TextField,
 } from '@mui/material';
+
+type Submission = {
+  courseId: string;
+  submissionName: string;
+  studentName: string;
+  studentUsername: string;
+  studentEmail: string;
+  dateSubmitted: string;
+  directLink: string;
+};
+
+type Report = {
+  schoolName: string;
+  googleSheetsLink: string;
+  updatedAt: string;
+  errorMessage?: string;
+  submissions: Submission[];
+};
+
+type PageState = { [key: string]: number };
+type RowsPerPageState = { [key: string]: number };
+type FilterState = { [key: string]: string };
 
 // Static school name for teacher (replace with your state logic later)
 const TEACHER_SCHOOL = 'school-x';
 
-const Reports = () => {
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState({}); // Track page per school
-  const [rowsPerPage, setRowsPerPage] = useState({}); // Track rows per page per school
-  const [filter, setFilter] = useState({}); // Track filter per school
+const Reports: React.FC = () => {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<PageState>({});
+  const [rowsPerPage, setRowsPerPage] = useState<RowsPerPageState>({});
+  const [filter, setFilter] = useState<FilterState>({});
 
-  // Assume userRole is obtained from state/context (e.g., 'admin' or 'teacher')
-  const userRole = 'teacher'; // Replace with actual role from state/auth context
+  const userRole = 'teacher'; // Replace with actual role from context/auth
 
-  // Fetch reports based on user role
   useEffect(() => {
     const fetchReports = async () => {
       try {
         let response;
         if (userRole === 'admin') {
-          // Admins fetch all reports
           response = await axios.get('http://34.16.51.59:4005/reports');
         } else {
-          // Teachers fetch only their school's report
           response = await axios.get(`http://34.16.51.59:4005/reports/${TEACHER_SCHOOL}`);
         }
 
-        const data = userRole === 'admin' ? response.data : [response.data]; // Normalize to array for consistency
+        const data: Report[] = userRole === 'admin' ? response.data : [response.data];
         setReports(data);
 
-        // Initialize pagination and filter state for each school
-        const initialPage = {};
-        const initialRowsPerPage = {};
-        const initialFilter = {};
+        const initialPage: PageState = {};
+        const initialRowsPerPage: RowsPerPageState = {};
+        const initialFilter: FilterState = {};
+
         data.forEach((report) => {
           initialPage[report.schoolName] = 0;
-          initialRowsPerPage[report.schoolName] = 5; // Default to 5 rows per page
-          initialFilter[report.schoolName] = ''; // Default to empty filter
+          initialRowsPerPage[report.schoolName] = 5;
+          initialFilter[report.schoolName] = '';
         });
+
         setPage(initialPage);
         setRowsPerPage(initialRowsPerPage);
         setFilter(initialFilter);
         setLoading(false);
       } catch (err) {
-        setError(userRole === 'admin' ? 'Failed to fetch reports' : `Failed to fetch report for ${TEACHER_SCHOOL}`);
+        setError(
+          userRole === 'admin'
+            ? 'Failed to fetch reports'
+            : `Failed to fetch report for ${TEACHER_SCHOOL}`
+        );
         setLoading(false);
       }
     };
+
     fetchReports();
   }, []);
-  const debouncedHandleFilterChange = debounce((schoolName, value) => {
+
+  const debouncedHandleFilterChange = debounce((schoolName: string, value: string) => {
     setFilter((prev) => ({ ...prev, [schoolName]: value }));
     setPage((prev) => ({ ...prev, [schoolName]: 0 }));
   }, 300);
-  // Fetch a specific school's report
-  const fetchSchoolReport = async (schoolName) => {
+
+  const fetchSchoolReport = async (schoolName: string) => {
     try {
-      const response = await axios.get(`http://34.16.51.59:4005/reports/${schoolName}`);
+      const response = await axios.get<Report>(
+        `http://34.16.51.59:4005/reports/${schoolName}`
+      );
       setReports((prev) =>
         prev.map((r) => (r.schoolName === schoolName ? response.data : r))
       );
@@ -84,20 +111,17 @@ const Reports = () => {
     }
   };
 
-  // Handle page change for a specific school
-  const handleChangePage = (schoolName, newPage) => {
+  const handleChangePage = (schoolName: string, newPage: number) => {
     setPage((prev) => ({ ...prev, [schoolName]: newPage }));
   };
 
-  // Handle rows per page change for a specific school
-  const handleChangeRowsPerPage = (schoolName, event) => {
+  const handleChangeRowsPerPage = (schoolName: string, event: ChangeEvent<HTMLInputElement>) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage((prev) => ({ ...prev, [schoolName]: newRowsPerPage }));
-    setPage((prev) => ({ ...prev, [schoolName]: 0 })); // Reset to first page
+    setPage((prev) => ({ ...prev, [schoolName]: 0 }));
   };
 
-  // Handle filter change for a specific school
-  const handleFilterChange = (schoolName, event) => {
+  const handleFilterChange = (schoolName: string, event: ChangeEvent<HTMLInputElement>) => {
     debouncedHandleFilterChange(schoolName, event.target.value);
   };
 
@@ -127,12 +151,10 @@ const Reports = () => {
         const currentRowsPerPage = rowsPerPage[report.schoolName] || 5;
         const currentFilter = filter[report.schoolName] || '';
 
-        // Filter submissions by submissionName
         const filteredSubmissions = report.submissions.filter((submission) =>
           submission.submissionName.toLowerCase().includes(currentFilter.toLowerCase())
         );
 
-        // Paginate filtered submissions
         const paginatedSubmissions = filteredSubmissions.slice(
           currentPage * currentRowsPerPage,
           (currentPage + 1) * currentRowsPerPage
@@ -150,8 +172,7 @@ const Reports = () => {
               </Link>
             </Typography>
             <Typography variant="body1" gutterBottom>
-              <strong>Last Updated:</strong>{' '}
-              {new Date(report.updatedAt).toLocaleString()}
+              <strong>Last Updated:</strong> {new Date(report.updatedAt).toLocaleString()}
             </Typography>
             <TextField
               label="Filter by Submission Name"
@@ -207,10 +228,10 @@ const Reports = () => {
                 <TablePagination
                   rowsPerPageOptions={[5, 10, 25]}
                   component="div"
-                  count={filteredSubmissions.length} // Use filtered submissions count
+                  count={filteredSubmissions.length}
                   rowsPerPage={currentRowsPerPage}
                   page={currentPage}
-                  onPageChange={(e, newPage) => handleChangePage(report.schoolName, newPage)}
+                  onPageChange={(_, newPage) => handleChangePage(report.schoolName, newPage)}
                   onRowsPerPageChange={(e) => handleChangeRowsPerPage(report.schoolName, e)}
                 />
               </>
