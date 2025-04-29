@@ -17,6 +17,7 @@ import StudentCourses from "./pages/student/StudentCourses";
 import StudentCalendar from "./pages/student/StudentCalendar";
 import StudentGrades from "./pages/student/StudentGrades";
 import StudentProfile from "./pages/student/StudentProfile";
+import Reports from "./pages/ReportTable"
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherStudents from "./pages/teacher/TeacherStudents";
@@ -44,12 +45,15 @@ const App = () => (
             {/* Auth Routes */}
             <Route path="/" element={<Navigate to="/auth" replace />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/student/reports" element={
+                <Reports />
+            } />
             <Route path="/config" element={
               <ProtectedRoute>
                 <MoodleConfig />
               </ProtectedRoute>
             } />
-
+            
             {/* Student Routes */}
             <Route path="/student/dashboard" element={
               <ProtectedRoute>
@@ -98,6 +102,7 @@ const App = () => (
                 <TeacherSchedule />
               </ProtectedRoute>
             } />
+            
             <Route path="/teacher/grades" element={
               <ProtectedRoute>
                 <TeacherGrades />
