@@ -58,9 +58,9 @@ const Reports: React.FC = () => {
       try {
         let response;
         if (userRole === 'admin') {
-          response = await axios.get('http://34.16.51.59:4005/reports');
+          response = await axios.get('https://34.16.51.59/reports');
         } else {
-          response = await axios.get(`http://34.16.51.59:4005/reports/${TEACHER_SCHOOL}`);
+          response = await axios.get(`https://34.16.51.59/reports/${TEACHER_SCHOOL}`);
         }
 
         const data: Report[] = userRole === 'admin' ? response.data : [response.data];
@@ -101,7 +101,7 @@ const Reports: React.FC = () => {
   const fetchSchoolReport = async (schoolName: string) => {
     try {
       const response = await axios.get<Report>(
-        `http://34.16.51.59:4005/reports/${schoolName}`
+        `https://34.16.51.59/reports/${schoolName}`
       );
       setReports((prev) =>
         prev.map((r) => (r.schoolName === schoolName ? response.data : r))
