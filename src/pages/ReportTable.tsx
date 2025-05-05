@@ -51,7 +51,7 @@ const Reports: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState<RowsPerPageState>({});
   const [filter, setFilter] = useState<FilterState>({});
 
-  const userRole = 'teacher'; // Replace with actual role from context/auth
+  const userRole = 'admin'; // Replace with actual role from context/auth
 
   useEffect(() => {
     const fetchReports = async () => {
