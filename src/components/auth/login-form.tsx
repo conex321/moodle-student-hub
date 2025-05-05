@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types/auth";
 import { moodleApi } from "@/services/moodleApi";
-import { EyeIcon, EyeOffIcon, LogIn, Settings } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LogIn, Settings, UserPlus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface LoginFormProps {
   userType: UserRole;
@@ -23,6 +25,7 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,21 +33,42 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      await login({
-        email,
-        password,
-        role: userType,
-        rememberMe,
-      });
-      
-      // Check if Moodle credentials are already set
-      if (moodleApi.hasCredentials()) {
-        navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+      if (isSignUp) {
+        // Handle sign up with Supabase
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              role: userType,
+            }
+          }
+        });
+
+        if (error) throw error;
+        
+        if (data.user) {
+          toast.success("Account created successfully! Please sign in.");
+          setIsSignUp(false);
+        }
       } else {
-        navigate("/config");
+        // Handle sign in
+        await login({
+          email,
+          password,
+          role: userType,
+          rememberMe,
+        });
+        
+        // Check if Moodle credentials are already set
+        if (moodleApi.hasCredentials()) {
+          navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+        } else {
+          navigate("/config");
+        }
       }
-    } catch (err) {
-      setError("Invalid credentials. Please try again.");
+    } catch (err: any) {
+      setError(err.message || "Authentication failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +104,9 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="w-full flex flex-col items-center">
       <h1 className="font-sans text-4xl font-medium mb-2">Welcome</h1>
-      <p className="font-sans text-lg text-gray-600 mb-8">Please enter your details to sign in</p>
+      <p className="font-sans text-lg text-gray-600 mb-8">
+        Please enter your details to {isSignUp ? "sign up" : "sign in"}
+      </p>
 
       {error && (
         <div className="w-full p-4 mb-4 text-white bg-red-500 rounded-lg flex items-center justify-center text-sm font-medium">
@@ -123,28 +149,30 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
           </button>
         </div>
 
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="remember-me"
-              checked={rememberMe}
-              onCheckedChange={(checked) => 
-                setRememberMe(checked === true)
-              }
-              className="h-4 w-4 rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-            <label
-              htmlFor="remember-me"
-              className="font-sans text-sm text-gray-700 cursor-pointer select-none"
-            >
-              Remember me
-            </label>
+        {!isSignUp && (
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember-me"
+                checked={rememberMe}
+                onCheckedChange={(checked) => 
+                  setRememberMe(checked === true)
+                }
+                className="h-4 w-4 rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+              <label
+                htmlFor="remember-me"
+                className="font-sans text-sm text-gray-700 cursor-pointer select-none"
+              >
+                Remember me
+              </label>
+            </div>
+            
+            <a href="#" className="text-sm text-primary hover:underline">
+              Forgot password?
+            </a>
           </div>
-          
-          <a href="#" className="text-sm text-primary hover:underline">
-            Forgot password?
-          </a>
-        </div>
+        )}
       </div>
 
       <Button
@@ -152,22 +180,44 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
         disabled={isLoading}
         className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-all duration-200 shadow-sm"
       >
-        {isLoading ? "Signing in..." : "Sign in"}
+        {isLoading ? (isSignUp ? "Signing up..." : "Signing in...") : (isSignUp ? "Sign up" : "Sign in")}
       </Button>
 
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handleTestLogin}
-        disabled={isLoading}
-        className="w-full h-12 mt-3 text-primary border-primary hover:bg-primary/10 font-medium rounded-lg transition-all duration-200"
-      >
-        <LogIn className="mr-2 h-4 w-4" /> Test the Environment
-      </Button>
+      {!isSignUp && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleTestLogin}
+          disabled={isLoading}
+          className="w-full h-12 mt-3 text-primary border-primary hover:bg-primary/10 font-medium rounded-lg transition-all duration-200"
+        >
+          <LogIn className="mr-2 h-4 w-4" /> Test the Environment
+        </Button>
+      )}
 
       <div className="w-full mt-6 pt-6 border-t border-gray-100 flex flex-col items-center space-y-4">
         <p className="font-sans text-sm text-gray-600">
-          Don't have an account? <span className="text-primary hover:underline cursor-pointer">Sign up</span>
+          {isSignUp ? (
+            <>
+              Already have an account?{" "}
+              <span 
+                className="text-primary hover:underline cursor-pointer"
+                onClick={() => setIsSignUp(false)}
+              >
+                Sign in
+              </span>
+            </>
+          ) : (
+            <>
+              Don't have an account?{" "}
+              <span 
+                className="text-primary hover:underline cursor-pointer"
+                onClick={() => setIsSignUp(true)}
+              >
+                Sign up
+              </span>
+            </>
+          )}
         </p>
 
         <div className="flex flex-col items-center space-y-2 w-full">
@@ -176,7 +226,7 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
             onClick={onToggleUserType}
             className="font-medium text-sm text-blue hover:underline transition-all"
           >
-            Login as {otherUserType}
+            {isSignUp ? `Sign up` : `Login`} as {otherUserType}
           </button>
           
           <Button

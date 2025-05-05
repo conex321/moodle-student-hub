@@ -1,19 +1,39 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 import { SchoolLogo } from "@/components/ui/school-logo";
 import { UserRole } from "@/types/auth";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Auth() {
   const [userType, setUserType] = useState<UserRole>("student");
-  const { setUserRole } = useAuth();
+  const { setUserRole, authState } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If user is already authenticated, redirect them to their dashboard
+    if (authState.isAuthenticated && authState.user) {
+      const dashboardPath = authState.user.role === 'teacher' 
+        ? '/teacher/dashboard' 
+        : '/student/dashboard';
+      navigate(dashboardPath);
+    }
+  }, [authState.isAuthenticated, authState.user, navigate]);
 
   const toggleUserType = () => {
     const newRole = userType === "student" ? "teacher" : "student";
     setUserType(newRole);
     setUserRole(newRole);
   };
+
+  if (authState.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-light to-teal-lighter">
+        <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-light to-teal-lighter">

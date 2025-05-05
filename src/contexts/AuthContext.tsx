@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthState, LoginCredentials, UserRole } from '@/types/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthContextProps {
   authState: AuthState;
@@ -35,11 +37,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [intendedRole, setIntendedRole] = useState<UserRole>('student');
+  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Check for existing Supabase session
     const checkAuth = async () => {
-      // In a real app, you'd check with Supabase here
+      // First check for Supabase session
+      const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+      
+      if (supabaseSession) {
+        const userRole = supabaseSession.user.user_metadata.role as UserRole || 'student';
+        const user: User = {
+          id: supabaseSession.user.id,
+          email: supabaseSession.user.email || '',
+          name: supabaseSession.user.email?.split('@')[0] || '',
+          role: userRole,
+        };
+        
+        setSession(supabaseSession);
+        setAuthState({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        return;
+      }
+      
+      // Fallback to local storage for test users
       const storedUser = localStorage.getItem('moodle_hub_user');
       
       if (storedUser) {
@@ -67,7 +91,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log('Auth state changed:', event, currentSession);
+        setSession(currentSession);
+        
+        if (currentSession) {
+          const userRole = currentSession.user.user_metadata.role as UserRole || 'student';
+          const user: User = {
+            id: currentSession.user.id,
+            email: currentSession.user.email || '',
+            name: currentSession.user.email?.split('@')[0] || '',
+            role: userRole,
+          };
+          
+          setAuthState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } else if (event === 'SIGNED_OUT') {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+          localStorage.removeItem('moodle_hub_user');
+        }
+      }
+    );
+
     checkAuth();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
@@ -99,51 +158,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return Promise.resolve();
     }
     
-    // Regular login logic (mock for now, would use Supabase in real app)
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        // Mock validation
-        if (credentials.email && credentials.password) {
-          const user: User = {
-            id: `user-${Date.now()}`,
-            email: credentials.email,
-            name: credentials.email.split('@')[0],
-            role: credentials.role,
-          };
-          
-          setAuthState({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
+    // Real login with Supabase
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+      
+      if (error) throw error;
+      
+      if (data.user) {
+        // Set user role in user metadata if it doesn't exist
+        if (!data.user.user_metadata.role) {
+          await supabase.auth.updateUser({
+            data: { role: credentials.role }
           });
-          
-          if (credentials.rememberMe) {
-            localStorage.setItem('moodle_hub_user', JSON.stringify(user));
-          }
-          
-          resolve();
-        } else {
-          reject(new Error('Invalid credentials'));
         }
-      }, 1000);
-    });
+        
+        const user: User = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.email?.split('@')[0] || '',
+          role: (data.user.user_metadata.role as UserRole) || credentials.role,
+        };
+        
+        setAuthState({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        
+        if (credentials.rememberMe) {
+          localStorage.setItem('moodle_hub_user', JSON.stringify(user));
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    // This is a placeholder for Supabase auth
-    // In a real app, you'd use Supabase auth here
+    // Try to log out from Supabase
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) console.error('Supabase logout error:', error);
+    } catch (err) {
+      console.error('Error during Supabase logout:', err);
+    }
     
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        localStorage.removeItem('moodle_hub_user');
-        setAuthState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
-        resolve();
-      }, 500);
+    // Always clean up local state
+    localStorage.removeItem('moodle_hub_user');
+    setAuthState({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
     });
+    
+    return Promise.resolve();
   };
 
   const setUserRole = (role: UserRole) => {
