@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, ChangeEvent } from 'react';
+import { MainLayout } from "@/components/layout/main-layout";
+
 import { debounce } from 'lodash';
 import axios from 'axios';
 import {
@@ -140,9 +142,12 @@ const Reports: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <MainLayout requiredRole="teacher">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
       </Box>
+      </MainLayout>
+      
     );
   }
 
@@ -156,6 +161,7 @@ const Reports: React.FC = () => {
 
   if (userRole === 'teacher' && !selectedSchool) {
     return (
+      <MainLayout requiredRole="teacher">
       <Box className="mx-4 my-8 max-w-2xl mx-auto">
         <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
           Select a School
@@ -176,15 +182,18 @@ const Reports: React.FC = () => {
           ))}
         </List>
       </Box>
+      </MainLayout>
     );
   }
 
   const report = reports.find((r) => r.schoolName === (userRole === 'teacher' ? selectedSchool : TEACHER_SCHOOL));
   if (!report) {
     return (
+      <MainLayout requiredRole="teacher">
       <Box m={2}>
         <Typography color="error">Report not found</Typography>
       </Box>
+        </MainLayout>
     );
   }
 
@@ -202,6 +211,7 @@ const Reports: React.FC = () => {
   );
 
   return (
+    <MainLayout requiredRole="teacher">
     <Box m={2}>
       <Typography variant="h4" gutterBottom>
         Submissions Reports
@@ -299,6 +309,7 @@ const Reports: React.FC = () => {
         Refresh Report
       </Button>
     </Box>
+    </MainLayout>
   );
 };
 
