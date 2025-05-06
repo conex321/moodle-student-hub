@@ -10,7 +10,7 @@ export default function TeacherGrades() {
   };
 
   return (
-    // <MainLayout requiredRole="teacher">
+    <MainLayout requiredRole="teacher">
       <div>
         <Button
           variant="contained"
@@ -24,6 +24,6 @@ export default function TeacherGrades() {
         <p className="mb-4">This page is under construction. Check back soon for grade management features.</p>
         
       </div>
-    // </MainLayout>
+     </MainLayout>
   );
 }
