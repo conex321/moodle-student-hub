@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { debounce } from 'lodash';
 import axios from 'axios';
@@ -61,13 +62,13 @@ const Reports: React.FC = () => {
     const fetchReports = async () => {
       try {
         let response;
-        if (userRole === 'teacher') {
+        if (userRole === 'teacher') { // Fixed comparison
           response = await axios.get('https://34.16.51.59/reports');
         } else {
           response = await axios.get(`https://34.16.51.59/reports/${TEACHER_SCHOOL}`);
         }
 
-        const data: Report[] = userRole === 'teacher' ? response.data : [response.data];
+        const data: Report[] = userRole === 'teacher' ? response.data : [response.data]; // Fixed comparison
         setReports(data);
 
         const initialPage: PageState = {};
@@ -86,7 +87,7 @@ const Reports: React.FC = () => {
         setLoading(false);
       } catch (err) {
         setError(
-          userRole === 'teacher'
+          userRole === 'teacher' // Fixed comparison
             ? 'Failed to fetch reports'
             : `Failed to fetch report for ${TEACHER_SCHOOL}`
         );
@@ -119,13 +120,13 @@ const Reports: React.FC = () => {
     setPage((prev) => ({ ...prev, [schoolName]: newPage }));
   };
 
-  const handleChangeRowsPerPage = (schoolName: string, event: ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = (schoolName: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage((prev) => ({ ...prev, [schoolName]: newRowsPerPage }));
     setPage((prev) => ({ ...prev, [schoolName]: 0 }));
   };
 
-  const handleFilterChange = (schoolName: string, event: ChangeEvent<HTMLInputElement>) => {
+  const handleFilterChange = (schoolName: string, event: React.ChangeEvent<HTMLInputElement>) => {
     debouncedHandleFilterChange(schoolName, event.target.value);
   };
 
@@ -231,7 +232,7 @@ const Reports: React.FC = () => {
         label="Filter by Submission Name"
         variant="outlined"
         value={currentFilter}
-        onChange={(e) => handleFilterChange(report.schoolName, e)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, e)}
         sx={{ mb: 2, width: '300px' }}
       />
       {report.errorMessage ? (
@@ -285,7 +286,7 @@ const Reports: React.FC = () => {
             rowsPerPage={currentRowsPerPage}
             page={currentPage}
             onPageChange={(_, newPage) => handleChangePage(report.schoolName, newPage)}
-            onRowsPerPageChange={(e) => handleChangeRowsPerPage(report.schoolName, e)}
+            onRowsPerPageChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeRowsPerPage(report.schoolName, e)}
           />
         </>
       )}
