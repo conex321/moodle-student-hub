@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { InputWithLabel } from "@/components/ui/input-with-label";
@@ -58,9 +59,11 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
               rememberMe,
             });
             
-            // Check if Moodle credentials are already set
-            if (moodleApi.hasCredentials()) {
-              navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+            // Teachers always go directly to dashboard, students go to config if needed
+            if (userType === "teacher") {
+              navigate("/teacher/dashboard");
+            } else if (moodleApi.hasCredentials()) {
+              navigate("/student/dashboard");
             } else {
               navigate("/config");
             }
@@ -81,9 +84,11 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
           rememberMe,
         });
         
-        // Check if Moodle credentials are already set
-        if (moodleApi.hasCredentials()) {
-          navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+        // Check if Moodle credentials are already set for students only
+        if (userType === "teacher") {
+          navigate("/teacher/dashboard");
+        } else if (moodleApi.hasCredentials()) {
+          navigate("/student/dashboard");
         } else {
           navigate("/config");
         }
@@ -118,7 +123,7 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
         rememberMe: false,
       });
       
-      // For test environment, we assume Moodle is configured
+      // For test environment, we always direct to dashboard
       navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
     } catch (err) {
       setError("Test login failed. Please try again.");
