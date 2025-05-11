@@ -1,15 +1,18 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { InputWithLabel } from "@/components/ui/input-with-label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types/auth";
 import { moodleApi } from "@/services/moodleApi";
-import { EyeIcon, EyeOffIcon, LogIn, Settings, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+// Import the extracted components
+import { LoginHeader } from "./login-header";
+import { ErrorMessage } from "./error-message";
+import { LoginFormInputs } from "./login-form-inputs";
+import { LoginButton } from "./login-button";
+import { LoginTabs } from "./login-tabs";
 
 interface LoginFormProps {
   userType: UserRole;
@@ -140,153 +143,34 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="w-full flex flex-col items-center">
-      <h1 className="font-sans text-4xl font-medium mb-2">Welcome</h1>
-      <p className="font-sans text-lg text-gray-600 mb-8">
-        Please enter your details to {isSignUp ? "sign up" : "sign in"}
-      </p>
+      <LoginHeader isSignUp={isSignUp} />
+      <ErrorMessage error={error} />
+      
+      <LoginFormInputs
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        showPassword={showPassword}
+        setShowPassword={setShowPassword}
+        rememberMe={rememberMe}
+        setRememberMe={setRememberMe}
+        isSignUp={isSignUp}
+      />
 
-      {error && (
-        <div className="w-full p-4 mb-4 text-white bg-red-500 rounded-lg flex items-center justify-center text-sm font-medium">
-          {error}
-        </div>
-      )}
+      <LoginButton 
+        isLoading={isLoading} 
+        isSignUp={isSignUp} 
+        handleTestLogin={handleTestLogin} 
+      />
 
-      <div className="w-full space-y-5 mb-6">
-        <InputWithLabel
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          containerClassName="space-y-2"
-          className="h-12 rounded-lg shadow-sm border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
-        />
-
-        <div className="w-full space-y-2">
-          <InputWithLabel
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            containerClassName="space-y-2 relative"
-            className="h-12 rounded-lg shadow-sm border-gray-200 pr-10 focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700"
-            tabIndex={-1}
-          >
-            {showPassword ? (
-              <EyeOffIcon className="h-5 w-5" />
-            ) : (
-              <EyeIcon className="h-5 w-5" />
-            )}
-          </button>
-        </div>
-
-        {!isSignUp && (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember-me"
-                checked={rememberMe}
-                onCheckedChange={(checked) => 
-                  setRememberMe(checked === true)
-                }
-                className="h-4 w-4 rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-              <label
-                htmlFor="remember-me"
-                className="font-sans text-sm text-gray-700 cursor-pointer select-none"
-              >
-                Remember me
-              </label>
-            </div>
-            
-            <a href="#" className="text-sm text-primary hover:underline">
-              Forgot password?
-            </a>
-          </div>
-        )}
-      </div>
-
-      <Button
-        type="submit"
-        disabled={isLoading}
-        className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-all duration-200 shadow-sm"
-      >
-        {isLoading ? (
-          <span className="flex items-center">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            {isSignUp ? "Signing up..." : "Signing in..."}
-          </span>
-        ) : (
-          isSignUp ? "Sign up" : "Sign in"
-        )}
-      </Button>
-
-      {!isSignUp && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleTestLogin}
-          disabled={isLoading}
-          className="w-full h-12 mt-3 text-primary border-primary hover:bg-primary/10 font-medium rounded-lg transition-all duration-200"
-        >
-          <LogIn className="mr-2 h-4 w-4" /> Test the Environment
-        </Button>
-      )}
-
-      <div className="w-full mt-6 pt-6 border-t border-gray-100 flex flex-col items-center space-y-4">
-        <p className="font-sans text-sm text-gray-600">
-          {isSignUp ? (
-            <>
-              Already have an account?{" "}
-              <span 
-                className="text-primary hover:underline cursor-pointer"
-                onClick={() => setIsSignUp(false)}
-              >
-                Sign in
-              </span>
-            </>
-          ) : (
-            <>
-              Don't have an account?{" "}
-              <span 
-                className="text-primary hover:underline cursor-pointer"
-                onClick={() => setIsSignUp(true)}
-              >
-                Sign up
-              </span>
-            </>
-          )}
-        </p>
-
-        <div className="flex flex-col items-center space-y-2 w-full">
-          <button
-            type="button"
-            onClick={onToggleUserType}
-            className="font-medium text-sm text-blue hover:underline transition-all"
-          >
-            {isSignUp ? `Sign up` : `Login`} as {otherUserType}
-          </button>
-          
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={goToAdminLogin}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <Settings className="h-4 w-4 mr-1" /> Admin Access
-          </Button>
-        </div>
-      </div>
+      <LoginTabs
+        isSignUp={isSignUp}
+        setIsSignUp={setIsSignUp}
+        otherUserType={otherUserType}
+        onToggleUserType={onToggleUserType}
+        goToAdminLogin={goToAdminLogin}
+      />
     </form>
   );
 }
