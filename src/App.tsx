@@ -30,6 +30,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMoodleConfig from "./pages/admin/AdminMoodleConfig";
 import AdminUsers from "./pages/admin/AdminUsers";
 import NotFound from "./pages/NotFound";
+import CreateSchoolForm from './pages/admin/CreateSchoolForm'
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/moodle-config" element={<AdminMoodleConfig />} />
             <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/createschoole" element={<CreateSchoolForm/>} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
