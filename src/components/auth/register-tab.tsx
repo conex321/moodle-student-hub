@@ -9,6 +9,7 @@ import {
   PasswordInput,
   ErrorMessage
 } from "./auth-form-elements";
+import { useNavigate } from "react-router-dom";
 
 interface RegisterTabProps {
   userType: UserRole;
@@ -19,6 +20,7 @@ interface RegisterTabProps {
 
 export function RegisterTab({ userType, onSuccess, onError, error }: RegisterTabProps) {
   const { signup } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -45,8 +47,13 @@ export function RegisterTab({ userType, onSuccess, onError, error }: RegisterTab
         name
       });
       
-      // Switch to login tab after successful registration
-      onSuccess();
+      // Redirect to appropriate dashboard based on user type instead of going to login tab
+      if (userType === "teacher") {
+        navigate("/teacher/dashboard");
+      } else {
+        navigate("/student/dashboard");
+      }
+      
       setPassword("");
       
     } catch (err: any) {
