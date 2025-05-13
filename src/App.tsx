@@ -23,6 +23,7 @@ import TeacherCourses from "./pages/teacher/TeacherCourses";
 import TeacherSchedule from "./pages/teacher/TeacherSchedule";
 import TeacherGrades from "./pages/teacher/TeacherGrades";
 import TeacherSettings from "./pages/teacher/TeacherSettings";
+import Reports from './pages/reportTable'
 // Admin Pages
 import AdminAuth from "./pages/AdminAuth";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/teacher/schedule" element={<TeacherSchedule />} />
             <Route path="/teacher/grades" element={<TeacherGrades />} />
             <Route path="/teacher/settings" element={<TeacherSettings />} />
+            <Route path="/teacher/reports" element={<Reports />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminAuth />} />

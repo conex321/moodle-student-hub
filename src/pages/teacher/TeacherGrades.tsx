@@ -6,7 +6,7 @@ export default function TeacherGrades() {
   const navigate = useNavigate();
 
   const handleNavigateToReports = () => {
-    navigate("/student/reports");
+    navigate("/teacher/reports");
   };
 
   return (
