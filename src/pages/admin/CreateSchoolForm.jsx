@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { AdminLayout } from "@/components/layout/admin-layout";
-
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CreateSchoolForm = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +11,6 @@ const CreateSchoolForm = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -23,16 +22,15 @@ const CreateSchoolForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
 
     try {
-      const response = await axios.post('https://ungradedassignmentsendpoint.myeducrm.net/create-school', formData); // change the URL to your endpoint
+   const response = await axios.post('https://ungradedassignmentsendpoint.myeducrm.net/create-school', formData); // change the URL to your endpoint
       if(response.status === 200){
       setMessage('School created successfully!');
       setFormData({ name: '', baseUrl: '', token: '' });
       }
     } catch (err) {
-      setMessage('Failed to create school.');
+      toast.error('Failed to add school.');
       console.error(err);
     }
 
@@ -40,77 +38,64 @@ const CreateSchoolForm = () => {
   };
 
   return (
-    <AdminLayout>
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Create School</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="name">School Name</label>
+    <div style={{ maxWidth: '400px', margin: '40px auto' }}>
+      <h2>Create School</h2>
+      <form onSubmit={handleSubmit}>
+        <label>
+          School Name:
           <input
             type="text"
             name="name"
-            id="name"
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full border px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+            style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="baseUrl">Base URL</label>
+        </label>
+        <label>
+          Base URL:
           <input
             type="text"
             name="baseUrl"
-            id="baseUrl"
             value={formData.baseUrl}
             onChange={handleChange}
             required
-            className="w-full border px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+            style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="token">Token</label>
+        </label>
+        <label>
+          Token:
           <input
             type="text"
             name="token"
-            id="token"
             value={formData.token}
             onChange={handleChange}
             required
-            className="w-full border px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+            style={{ width: '100%', padding: '8px', marginBottom: '15px' }}
           />
-        </div>
+        </label>
 
         <button
-            type="submit"
-            disabled={loading}
-            style={{
-                width: '100%',
-                padding: '10px',
-                backgroundColor: loading ? '#999' : '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                fontWeight: 'bold',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background-color 0.3s ease'
-            }}
-            >
-            {loading ? 'Submitting...' : 'Submit'}
-            </button>
-
-
-
-        {message && (
-          <p className="text-center mt-2 text-sm text-gray-700">{message}</p>
-        )}
-        
+          type="submit"
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: '10px',
+            backgroundColor: loading ? '#999' : '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            fontWeight: 'bold',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'background-color 0.3s ease'
+          }}
+        >
+          {loading ? 'Submitting...' : 'Submit'}
+        </button>
       </form>
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
-    </AdminLayout>
   );
 };
 
