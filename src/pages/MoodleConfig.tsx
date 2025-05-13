@@ -1,11 +1,11 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputWithLabel } from "@/components/ui/input-with-label";
 import { Button } from "@/components/ui/button";
 import { moodleApi } from "@/services/moodleApi";
 import { useAuth } from "@/contexts/AuthContext";
-import { MoodleCredentials } from "@/types/moodle";
 
 export default function MoodleConfig() {
   const navigate = useNavigate();
@@ -14,6 +14,13 @@ export default function MoodleConfig() {
   const [moodleToken, setMoodleToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect teachers to dashboard if they somehow end up on this page
+  useEffect(() => {
+    if (authState.user?.role === "teacher") {
+      navigate("/teacher/dashboard");
+    }
+  }, [authState.user?.role, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,12 +41,8 @@ export default function MoodleConfig() {
       // Try to fetch courses as a test
       await moodleApi.getCourses();
 
-      // Redirect to the appropriate dashboard
-      if (authState.user?.role === "teacher") {
-        navigate("/teacher/dashboard");
-      } else {
-        navigate("/student/dashboard");
-      }
+      // Always navigate to the appropriate dashboard
+      navigate("/student/dashboard");
     } catch (err) {
       let message = "Failed to connect to Moodle";
       if (err instanceof Error) {

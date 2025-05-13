@@ -41,7 +41,7 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
         rememberMe,
       });
       
-      // If user is a teacher (faculty), send them directly to dashboard
+      // Always send teachers directly to dashboard
       if (userType === "teacher") {
         navigate("/teacher/dashboard");
       } else {
@@ -71,7 +71,7 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
         rememberMe: false,
       });
       
-      // For test environment, we assume Moodle is configured
+      // Always go to dashboard for test logins - teacher or student
       navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
     } catch (err) {
       onError("Test login failed. Please try again.");
