@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 // Define Zod schema for form validation
 const schoolSchema = z.object({
@@ -60,6 +61,7 @@ const CreateSchoolForm = () => {
   };
 
   return (
+    <AdminLayout>
     <div style={{ maxWidth: '400px', margin: '40px auto', fontFamily: 'Arial, sans-serif' }}>
       <h2 style={{ color: '#333', textAlign: 'center' }}>Create School</h2>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -157,6 +159,7 @@ const CreateSchoolForm = () => {
 
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
+    </AdminLayout>
   );
 };
 
