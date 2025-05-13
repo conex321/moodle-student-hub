@@ -41,11 +41,16 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
         rememberMe,
       });
       
-      // Check if Moodle credentials are already set
-      if (moodleApi.hasCredentials()) {
-        navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+      // If user is a teacher (faculty), send them directly to dashboard
+      if (userType === "teacher") {
+        navigate("/teacher/dashboard");
       } else {
-        navigate("/config");
+        // For students, check if Moodle credentials are already set
+        if (moodleApi.hasCredentials()) {
+          navigate("/student/dashboard");
+        } else {
+          navigate("/config");
+        }
       }
     } catch (err: any) {
       onError(err.message || "Invalid credentials. Please try again.");
