@@ -28,9 +28,7 @@ export default function Auth() {
             </p>
             <div className="mt-6 bg-teal-lighter/50 rounded-xl p-6 w-full">
               <h4 className="text-navy font-medium mb-2">Need help?</h4>
-              <p className="text-sm text-navy/70">
-                Contact IT support at support@yourschool.edu
-              </p>
+              <p className="text-sm text-navy/70">Contact IT support at support@sisconex.com</p>
             </div>
           </div>
         </div>
