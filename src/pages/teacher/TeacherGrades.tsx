@@ -47,7 +47,7 @@ export default function TeacherGrades() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [grades, setGrades] = useState<EditableGrade[]>([]);
 
-  const { data: courses, isLoading: coursesLoading } = useQuery({
+  const { data: courses = [], isLoading: coursesLoading } = useQuery({
     queryKey: ['courses'],
     queryFn: moodleApi.getCourses.bind(moodleApi),
   });
@@ -230,7 +230,7 @@ export default function TeacherGrades() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
-              {courses?.map(course => (
+              {courses && courses.map(course => (
                 <SelectItem key={course.id} value={course.id.toString()}>
                   {course.fullname}
                 </SelectItem>
