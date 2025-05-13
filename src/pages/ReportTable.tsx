@@ -65,9 +65,9 @@ const Reports: React.FC = () => {
       try {
         let response;
         if (userRole === 'teacher') { // Fixed comparison
-          response = await axios.get('https://34.16.51.59/reports');
+          response = await axios.get('ungradedassignmentsendpoint.myeducrm.net/reports');
         } else {
-          response = await axios.get(`https://34.16.51.59/reports/${TEACHER_SCHOOL}`);
+          response = await axios.get(`ungradedassignmentsendpoint.myeducrm.net/reports/${TEACHER_SCHOOL}`);
         }
 
         const data: Report[] = userRole === 'teacher' ? response.data : [response.data]; // Fixed comparison
