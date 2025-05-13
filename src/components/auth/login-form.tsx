@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { InputWithLabel } from "@/components/ui/input-with-label";
@@ -70,7 +69,7 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
         password,
         role: userType,
         rememberMe: false,
-        name,
+        name
       });
       
       // Switch to login tab after successful registration

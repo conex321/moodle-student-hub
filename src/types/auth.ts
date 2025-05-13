@@ -19,4 +19,5 @@ export interface LoginCredentials {
   password: string;
   role: UserRole;
   rememberMe?: boolean;
+  name?: string; // Added name for signup
 }

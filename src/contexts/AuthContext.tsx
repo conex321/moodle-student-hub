@@ -214,6 +214,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
+      // Call edge function to create profile
+      try {
+        await supabase.functions.invoke('createProfile', {
+          body: {
+            user: data.user,
+            metadata: {
+              full_name: credentials.name,
+              role: credentials.role,
+              email: credentials.email
+            }
+          }
+        });
+      } catch (err) {
+        console.error("Error calling createProfile function:", err);
+        // Continue even if function fails, as the trigger should create the profile
+      }
+
       // Set user role for profile lookup
       setIntendedRole(credentials.role);
 
