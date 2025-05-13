@@ -21,3 +21,11 @@ export interface LoginCredentials {
   rememberMe?: boolean;
   name?: string; // Added name for signup
 }
+
+export interface AuthContextProps {
+  authState: AuthState;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  signup: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+  setUserRole: (role: UserRole) => void;
+}
