@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { AdminLayout } from "@/components/layout/admin-layout";
 
 // Pages
 import Auth from "./pages/Auth";
@@ -17,7 +16,6 @@ import StudentCourses from "./pages/student/StudentCourses";
 import StudentCalendar from "./pages/student/StudentCalendar";
 import StudentGrades from "./pages/student/StudentGrades";
 import StudentProfile from "./pages/student/StudentProfile";
-import Reports from "./pages/ReportTable"
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherStudents from "./pages/teacher/TeacherStudents";
@@ -45,92 +43,32 @@ const App = () => (
             {/* Auth Routes */}
             <Route path="/" element={<Navigate to="/auth" replace />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/student/reports" element={
-                <Reports />
-            } />
             <Route path="/config" element={
               <ProtectedRoute>
                 <MoodleConfig />
               </ProtectedRoute>
             } />
-            
+
             {/* Student Routes */}
-            <Route path="/student/dashboard" element={
-              <ProtectedRoute>
-                <StudentDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/student/courses" element={
-              <ProtectedRoute>
-                <StudentCourses />
-              </ProtectedRoute>
-            } />
-            <Route path="/student/calendar" element={
-              <ProtectedRoute>
-                <StudentCalendar />
-              </ProtectedRoute>
-            } />
-            <Route path="/student/grades" element={
-              <ProtectedRoute>
-                <StudentGrades />
-              </ProtectedRoute>
-            } />
-            <Route path="/student/profile" element={
-              <ProtectedRoute>
-                <StudentProfile />
-              </ProtectedRoute>
-            } />
+            <Route path="/student/dashboard" element={<StudentDashboard />} />
+            <Route path="/student/courses" element={<StudentCourses />} />
+            <Route path="/student/calendar" element={<StudentCalendar />} />
+            <Route path="/student/grades" element={<StudentGrades />} />
+            <Route path="/student/profile" element={<StudentProfile />} />
             
             {/* Teacher Routes */}
-            <Route path="/teacher/dashboard" element={
-              <ProtectedRoute>
-                <TeacherDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/teacher/students" element={
-              <ProtectedRoute>
-                <TeacherStudents />
-              </ProtectedRoute>
-            } />
-            <Route path="/teacher/courses" element={
-              <ProtectedRoute>
-                <TeacherCourses />
-              </ProtectedRoute>
-            } />
-            <Route path="/teacher/schedule" element={
-              <ProtectedRoute>
-                <TeacherSchedule />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/teacher/grades" element={
-              <ProtectedRoute>
-                <TeacherGrades />
-              </ProtectedRoute>
-            } />
-            <Route path="/teacher/settings" element={
-              <ProtectedRoute>
-                <TeacherSettings />
-              </ProtectedRoute>
-            } />
+            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/students" element={<TeacherStudents />} />
+            <Route path="/teacher/courses" element={<TeacherCourses />} />
+            <Route path="/teacher/schedule" element={<TeacherSchedule />} />
+            <Route path="/teacher/grades" element={<TeacherGrades />} />
+            <Route path="/teacher/settings" element={<TeacherSettings />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminAuth />} />
-            <Route path="/admin/dashboard" element={
-              <AdminLayout>
-                <AdminDashboard />
-              </AdminLayout>
-            } />
-            <Route path="/admin/moodle-config" element={
-              <AdminLayout>
-                <AdminMoodleConfig />
-              </AdminLayout>
-            } />
-            <Route path="/admin/users" element={
-              <AdminLayout>
-                <AdminUsers />
-              </AdminLayout>
-            } />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/moodle-config" element={<AdminMoodleConfig />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
