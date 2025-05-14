@@ -42,7 +42,7 @@ export function Sidebar({ role }: SidebarProps) {
     { icon: Users, label: "Students", href: "/teacher/students" },
     { icon: Book, label: "Courses", href: "/teacher/courses" },
     { icon: Calendar, label: "Schedule", href: "/teacher/schedule" },
-    { icon: GraduationCap, label: "Grades", href: "/teacher/grades" },
+    { icon: GraduationCap, label: "Grades", href: "/teacher/reports" },
     { icon: Settings, label: "Settings", href: "/teacher/settings" },
   ];
   
