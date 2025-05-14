@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserRole } from "@/types/auth";
@@ -37,21 +36,12 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
       await login({
         email,
         password,
-        role: userType,
+        role: userType, // Always "teacher" now
         rememberMe,
       });
       
-      // Always send teachers directly to dashboard
-      if (userType === "teacher") {
-        navigate("/teacher/dashboard");
-      } else {
-        // For students, check if Moodle credentials are already set
-        if (moodleApi.hasCredentials()) {
-          navigate("/student/dashboard");
-        } else {
-          navigate("/config");
-        }
-      }
+      // Always redirect to teacher dashboard
+      navigate("/teacher/dashboard");
     } catch (err: any) {
       onError(err.message || "Invalid credentials. Please try again.");
     } finally {
@@ -65,14 +55,14 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
 
     try {
       await login({
-        email: userType === "teacher" ? "teacher@test.com" : "student@test.com",
+        email: "teacher@test.com",
         password: "test123",
-        role: userType,
+        role: "teacher",
         rememberMe: false,
       });
       
-      // Always go to dashboard for test logins - teacher or student
-      navigate(userType === "teacher" ? "/teacher/dashboard" : "/student/dashboard");
+      // Always go to teacher dashboard
+      navigate("/teacher/dashboard");
     } catch (err) {
       onError("Test login failed. Please try again.");
     } finally {
@@ -118,7 +108,7 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-all duration-200 shadow-sm"
+        className="w-full h-12 bg-[#f7911d] hover:bg-[#f7911d]/90 text-white font-medium rounded-lg transition-all duration-200 shadow-sm"
       >
         {isLoading ? "Signing in..." : "Sign in"}
       </Button>
@@ -128,7 +118,7 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
         variant="outline"
         onClick={handleTestLogin}
         disabled={isLoading}
-        className="w-full h-12 mt-3 text-primary border-primary hover:bg-primary/10 font-medium rounded-lg transition-all duration-200"
+        className="w-full h-12 mt-3 text-[#f7911d] border-[#f7911d] hover:bg-[#f7911d]/10 font-medium rounded-lg transition-all duration-200"
       >
         <LogIn className="mr-2 h-4 w-4" /> Test the Environment
       </Button>

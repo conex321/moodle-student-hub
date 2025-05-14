@@ -14,7 +14,7 @@ interface LoginFormProps {
   onToggleUserType: () => void;
 }
 
-export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
+export function LoginForm({ userType }: LoginFormProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [error, setError] = useState<string | null>(null);
@@ -33,12 +33,10 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
     navigate("/admin");
   };
 
-  const otherUserType = userType === "teacher" ? "Student" : "Faculty";
-
   return (
     <div className="w-full flex flex-col items-center">
       <h1 className="font-sans text-4xl font-medium mb-2">Welcome</h1>
-      <p className="font-sans text-lg text-gray-600 mb-8">Please enter your details to continue</p>
+      <p className="font-sans text-lg text-gray-600 mb-8">Faculty Login Portal</p>
 
       <Tabs 
         value={activeTab} 
@@ -70,14 +68,6 @@ export function LoginForm({ userType, onToggleUserType }: LoginFormProps) {
 
       <div className="w-full mt-6 pt-6 border-t border-gray-100 flex flex-col items-center space-y-4">
         <div className="flex flex-col items-center space-y-2 w-full">
-          <button
-            type="button"
-            onClick={onToggleUserType}
-            className="font-medium text-sm text-blue hover:underline transition-all"
-          >
-            Continue as {otherUserType}
-          </button>
-          
           <Button
             type="button"
             variant="ghost"

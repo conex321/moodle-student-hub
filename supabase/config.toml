@@ -3,3 +3,4 @@ project_id = "khcrhgpkmvwnwqeqknuz"
 
 [functions]
 [functions.createProfile]
+verify_jwt = true

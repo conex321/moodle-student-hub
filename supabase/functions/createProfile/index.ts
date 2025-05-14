@@ -45,13 +45,13 @@ serve(async (req) => {
       )
     }
 
-    // Create profile
+    // Create profile - always set role to teacher regardless of what was passed
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .insert({
         id: user.id,
         full_name: metadata?.full_name || user.email?.split('@')[0] || 'User',
-        role: metadata?.role || 'student',
+        role: 'teacher', // Force role to be teacher
         email: user.email,
         avatar_url: metadata?.avatar_url || null,
         updated_at: new Date()

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { UserRole } from "@/types/auth";
 import { InputWithLabel } from "@/components/ui/input-with-label";
@@ -42,19 +41,14 @@ export function RegisterTab({ userType, onSuccess, onError, error }: RegisterTab
       await signup({
         email,
         password,
-        role: userType,
+        // Always register as teacher
+        role: "teacher",
         rememberMe: false,
         name
       });
       
-      // Redirect to appropriate dashboard based on user type instead of going to login tab
-      if (userType === "teacher") {
-        navigate("/teacher/dashboard");
-      } else {
-        navigate("/student/dashboard");
-      }
-      
-      setPassword("");
+      // Always redirect directly to the teacher dashboard
+      navigate("/teacher/dashboard");
       
     } catch (err: any) {
       onError(err.message || "Failed to create account. Please try again.");
@@ -105,7 +99,7 @@ export function RegisterTab({ userType, onSuccess, onError, error }: RegisterTab
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-all duration-200 shadow-sm"
+        className="w-full h-12 bg-[#f7911d] hover:bg-[#f7911d]/90 text-white font-medium rounded-lg transition-all duration-200 shadow-sm"
       >
         {isLoading ? "Creating Account..." : "Create Account"}
         <UserPlus className="ml-2 h-4 w-4" />
