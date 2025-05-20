@@ -84,30 +84,35 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
   const handleAddUser = async () => {
     try {
-      // Create user in Supabase Auth
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      // Instead of using the admin API, use the regular signup method
+      // and then manually insert the profile data
+      
+      // First, sign up the user
+      const { data: authData, error: signupError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: newUser.name,
-          role: newUser.role
+        options: {
+          data: {
+            full_name: newUser.name,
+            role: newUser.role
+          }
         }
       });
 
-      if (authError) {
-        throw authError;
+      if (signupError) {
+        throw signupError;
       }
 
-      if (!authUser.user) {
+      if (!authData.user) {
         throw new Error("Failed to create user");
       }
 
-      // Insert user profile in the profiles table
+      // Insert user profile in the profiles table manually
+      // This might be redundant if you have a trigger in Supabase that creates profiles automatically
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
-          id: authUser.user.id,
+          id: authData.user.id,
           full_name: newUser.name,
           email: newUser.email,
           role: newUser.role,
@@ -120,7 +125,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
       // Add the new user to our state
       const newUserData: User = {
-        id: authUser.user.id,
+        id: authData.user.id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
