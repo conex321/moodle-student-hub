@@ -3,11 +3,15 @@ import { useState } from "react";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { InputWithLabel } from "@/components/ui/input-with-label";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Search, UserPlus, Check, X, MoreHorizontal, UserCog } from "lucide-react";
+import { UserPlus } from "lucide-react";
+
+// Import the refactored components
+import { UserForm } from "@/components/admin/users/UserForm";
+import { UserTable } from "@/components/admin/users/UserTable";
+import { UserSearch } from "@/components/admin/users/UserSearch";
 
 // Mock user data
 const mockTeachers = [
@@ -116,67 +120,11 @@ export default function AdminUsers() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[550px]">
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-                <DialogDescription>
-                  Create a new user account for the Moodle Hub
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4 py-4">
-                <InputWithLabel
-                  label="Full Name"
-                  type="text"
-                  value={newUser.name}
-                  onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                  placeholder="e.g., John Smith"
-                  required
-                />
-                
-                <InputWithLabel
-                  label="Email Address"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                  placeholder="email@example.com"
-                  required
-                />
-                
-                <InputWithLabel
-                  label="Password"
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                  placeholder="Create a secure password"
-                  required
-                />
-                
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium leading-none">User Role</label>
-                  <div className="flex space-x-4 mt-2">
-                    {["student", "teacher", "admin"].map((role) => (
-                      <label key={role} className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          name="role"
-                          value={role}
-                          checked={newUser.role === role}
-                          onChange={() => setNewUser({...newUser, role})}
-                          className="rounded text-primary"
-                        />
-                        <span className="capitalize">{role}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button onClick={handleAddUser}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
-              </div>
+              <UserForm 
+                newUser={newUser}
+                setNewUser={setNewUser}
+                handleAddUser={handleAddUser}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -188,16 +136,10 @@ export default function AdminUsers() {
               View and manage all users in the system
             </CardDescription>
             <div className="mt-4 flex justify-between items-center">
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  className="pl-8 h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+              <UserSearch 
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+              />
               
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
@@ -210,61 +152,7 @@ export default function AdminUsers() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {getFilteredUsers().map((user) => (
-                    <tr key={user.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        } capitalize`}>
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900 mr-4">
-                          <UserCog className="h-4 w-4" />
-                        </button>
-                        <button className="text-gray-500 hover:text-gray-900">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <UserTable users={getFilteredUsers()} />
           </CardContent>
         </Card>
       </div>
