@@ -14,12 +14,23 @@ export default function AdminAuth() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null); // Clear previous errors
     setIsLoading(true);
 
     try {
+      // Validate input fields
+      if (!email.trim()) {
+        throw new Error("Email is required");
+      }
+
+      if (!password.trim()) {
+        throw new Error("Password is required");
+      }
+
       // This is a simple mock authentication for admin
       // In a real app, this would be a secure authentication process
       if (email === "admin@test.com" && password === "admin123") {
@@ -41,6 +52,7 @@ export default function AdminAuth() {
         throw new Error("Invalid credentials");
       }
     } catch (error) {
+      setError(error instanceof Error ? error.message : "Invalid credentials");
       toast({
         variant: "destructive",
         title: "Login failed",
@@ -52,6 +64,7 @@ export default function AdminAuth() {
   };
 
   const handleTestAdminLogin = async () => {
+    setError(null); // Clear previous errors
     setIsLoading(true);
     
     try {
@@ -70,6 +83,7 @@ export default function AdminAuth() {
       
       navigate("/admin/dashboard");
     } catch (error) {
+      setError("Could not log in as test admin");
       toast({
         variant: "destructive",
         title: "Login failed",
@@ -95,6 +109,12 @@ export default function AdminAuth() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+            
             <InputWithLabel
               label="Email"
               type="email"
@@ -105,7 +125,7 @@ export default function AdminAuth() {
               labelClassName="text-base"
             />
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 relative">
               <InputWithLabel
                 label="Password"
                 type={showPassword ? "text" : "password"}
