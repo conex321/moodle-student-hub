@@ -9,12 +9,21 @@ import {
   TableCell 
 } from "@/components/ui/table";
 import { User } from "@/types/user";
+import { useNavigate } from "react-router-dom";
 
 interface UserTableProps {
   users: User[];
 }
 
 export const UserTable = ({ users }: UserTableProps) => {
+  const navigate = useNavigate();
+
+  const handleEditUser = (user: User) => {
+    if (user.role === "teacher") {
+      navigate("/admin/school-access", { state: { teacherId: user.id } });
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -45,7 +54,11 @@ export const UserTable = ({ users }: UserTableProps) => {
                 </span>
               </TableCell>
               <TableCell className="text-right">
-                <button className="text-blue-600 hover:text-blue-900 mr-4">
+                <button 
+                  className={`text-blue-600 hover:text-blue-900 mr-4 ${user.role === 'teacher' ? 'cursor-pointer' : ''}`}
+                  onClick={() => handleEditUser(user)}
+                  title={user.role === 'teacher' ? "Manage school access" : ""}
+                >
                   <UserCog className="h-4 w-4" />
                 </button>
                 <button className="text-gray-500 hover:text-gray-900">
