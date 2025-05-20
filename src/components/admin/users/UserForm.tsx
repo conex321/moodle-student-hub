@@ -1,27 +1,21 @@
 
-import { useState } from "react";
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { InputWithLabel } from "@/components/ui/input-with-label";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
+import { NewUser, UserRole } from "@/types/user";
 
 interface UserFormProps {
-  newUser: {
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-  };
-  setNewUser: React.Dispatch<React.SetStateAction<{
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-  }>>;
+  newUser: NewUser;
+  setNewUser: React.Dispatch<React.SetStateAction<NewUser>>;
   handleAddUser: () => void;
 }
 
 export const UserForm = ({ newUser, setNewUser, handleAddUser }: UserFormProps) => {
+  const handleRoleChange = (role: UserRole) => {
+    setNewUser({...newUser, role});
+  };
+
   return (
     <>
       <DialogHeader>
@@ -62,14 +56,14 @@ export const UserForm = ({ newUser, setNewUser, handleAddUser }: UserFormProps) 
         <div className="space-y-1.5">
           <label className="text-sm font-medium leading-none">User Role</label>
           <div className="flex space-x-4 mt-2">
-            {["student", "teacher", "admin"].map((role) => (
+            {(["student", "teacher", "admin"] as UserRole[]).map((role) => (
               <label key={role} className="flex items-center space-x-2">
                 <input
                   type="radio"
                   name="role"
                   value={role}
                   checked={newUser.role === role}
-                  onChange={() => setNewUser({...newUser, role})}
+                  onChange={() => handleRoleChange(role)}
                   className="rounded text-primary"
                 />
                 <span className="capitalize">{role}</span>

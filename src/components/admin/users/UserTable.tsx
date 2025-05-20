@@ -8,14 +8,7 @@ import {
   TableBody, 
   TableCell 
 } from "@/components/ui/table";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-}
+import { User } from "@/types/user";
 
 interface UserTableProps {
   users: User[];
