@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          accessible_schools: string[] | null
           avatar_url: string | null
           created_at: string | null
           email: string | null
@@ -20,6 +21,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          accessible_schools?: string[] | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
@@ -29,6 +31,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          accessible_schools?: string[] | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
