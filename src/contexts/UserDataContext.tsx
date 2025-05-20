@@ -40,24 +40,29 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     async function fetchUsers() {
       try {
         setIsLoading(true);
+        
+        console.log("Fetching users from profiles table...");
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, email, role, created_at')
-          .order('created_at', { ascending: false });
+          .select('id, full_name, email, role, created_at');
 
         if (error) {
+          console.error("Supabase error:", error);
           throw error;
         }
 
+        console.log("Profiles data received:", data);
+
         // Transform the Supabase data to match our User type
-        const transformedUsers: User[] = data.map(profile => ({
+        const transformedUsers: User[] = data ? data.map(profile => ({
           id: profile.id,
           name: profile.full_name || 'Unknown',
           email: profile.email || 'No email',
           role: (profile.role as UserRole) || 'student',
           status: 'active', // Default to active since we don't have this in profiles table
-        }));
+        })) : [];
 
+        console.log("Transformed users:", transformedUsers);
         setUsers(transformedUsers);
       } catch (error: any) {
         console.error('Error fetching users:', error.message);
@@ -66,6 +71,9 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           description: error.message || "Failed to load users",
           variant: "destructive",
         });
+        
+        // Set empty array on error to avoid undefined issues
+        setUsers([]);
       } finally {
         setIsLoading(false);
       }
@@ -89,6 +97,10 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
       if (authError) {
         throw authError;
+      }
+
+      if (!authUser.user) {
+        throw new Error("Failed to create user");
       }
 
       // Insert user profile in the profiles table

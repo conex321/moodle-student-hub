@@ -1,6 +1,6 @@
 
 export interface User {
-  id: number;
+  id: string; // Changed from number to string to match Supabase UUID format
   name: string;
   email: string;
   role: "admin" | "teacher" | "student";
