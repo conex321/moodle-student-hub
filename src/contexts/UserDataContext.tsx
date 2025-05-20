@@ -35,7 +35,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState("all");
   const { toast } = useToast();
 
-  // Fetch users from Supabase
+  // Fetch users from Supabase profiles table
   useEffect(() => {
     async function fetchUsers() {
       try {
