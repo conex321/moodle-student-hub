@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserPlus } from "lucide-react";
 import { UserDataProvider, useUserData } from "@/contexts/UserDataContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Import the refactored components
 import { UserForm } from "@/components/admin/users/UserForm";
@@ -21,7 +22,8 @@ const UsersContent = () => {
     activeTab, 
     setActiveTab, 
     handleAddUser, 
-    getFilteredUsers 
+    getFilteredUsers,
+    isLoading
   } = useUserData();
 
   return (
@@ -68,7 +70,17 @@ const UsersContent = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <UserTable users={getFilteredUsers()} />
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, index) => (
+                <div key={index} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <UserTable users={getFilteredUsers()} />
+          )}
         </CardContent>
       </Card>
     </div>

@@ -4,16 +4,28 @@ import { InputWithLabel } from "@/components/ui/input-with-label";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import { NewUser, UserRole } from "@/types/user";
+import { useState } from "react";
 
 interface UserFormProps {
   newUser: NewUser;
   setNewUser: React.Dispatch<React.SetStateAction<NewUser>>;
-  handleAddUser: () => void;
+  handleAddUser: () => Promise<void>;
 }
 
 export const UserForm = ({ newUser, setNewUser, handleAddUser }: UserFormProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const handleRoleChange = (role: UserRole) => {
     setNewUser({...newUser, role});
+  };
+
+  const onAddUser = async () => {
+    setIsSubmitting(true);
+    try {
+      await handleAddUser();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -74,9 +86,12 @@ export const UserForm = ({ newUser, setNewUser, handleAddUser }: UserFormProps) 
       </div>
       
       <div className="flex justify-end">
-        <Button onClick={handleAddUser}>
+        <Button 
+          onClick={onAddUser} 
+          disabled={isSubmitting}
+        >
           <UserPlus className="mr-2 h-4 w-4" />
-          Add User
+          {isSubmitting ? 'Adding User...' : 'Add User'}
         </Button>
       </div>
     </>
