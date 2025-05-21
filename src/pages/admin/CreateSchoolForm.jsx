@@ -48,6 +48,7 @@ const CreateSchoolForm = () => {
 
     try {
       const response = await axios.post('https://ungradedassignmentsendpoint.myeducrm.net/create-school', data);
+      
       if (response.status === 200) {
         toast.success('School created successfully!');
         reset();
