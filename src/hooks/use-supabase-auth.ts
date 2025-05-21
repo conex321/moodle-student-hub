@@ -16,31 +16,63 @@ export function useSupabaseAuth() {
   const [intendedRole, setIntendedRole] = useState<UserRole>('student');
 
   useEffect(() => {
+    // Check for existing session in localStorage (for test users)
+    const storedUser = localStorage.getItem('moodle_hub_user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setAuthState({
+          user: parsedUser,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        console.log("Found stored test user:", parsedUser);
+        return; // Skip Supabase auth check if we have a test user
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
+        localStorage.removeItem('moodle_hub_user');
+      }
+    }
+
     // Set up the auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
+        
         if (session && session.user) {
           // User is authenticated, get profile details
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
 
-          const user: User = {
-            id: session.user.id,
-            email: session.user.email || '',
-            name: profile?.full_name || session.user.email?.split('@')[0] || 'User',
-            role: (profile?.role as UserRole) || intendedRole,
-          };
+            console.log("Profile data:", profile);
 
-          setAuthState({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-          });
+            const user: User = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: profile?.full_name || session.user.email?.split('@')[0] || 'User',
+              role: (profile?.role as UserRole) || intendedRole,
+            };
+
+            setAuthState({
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } catch (error) {
+            console.error("Error fetching profile:", error);
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+          }
         } else {
           // No active session
+          console.log("No active session");
           setAuthState({
             user: null,
             isAuthenticated: false,
@@ -52,16 +84,28 @@ export function useSupabaseAuth() {
 
     // Check for existing session on mount
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log("No existing session found");
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        } else {
+          console.log("Existing session found:", session.user?.id);
+        }
+        // The onAuthStateChange handler will handle session if it exists
+      } catch (error) {
+        console.error("Error checking auth:", error);
         setAuthState({
           user: null,
           isAuthenticated: false,
           isLoading: false,
         });
       }
-      // The onAuthStateChange handler will handle session if it exists
     };
 
     checkAuth();
@@ -72,12 +116,15 @@ export function useSupabaseAuth() {
   }, [intendedRole]);
 
   const login = async (credentials: LoginCredentials) => {
+    console.log("Login called with:", credentials);
+    
     // Check if this is a test login
     const isTestLogin = 
       (credentials.email === 'teacher@test.com' || credentials.email === 'student@test.com') && 
       credentials.password === 'test123';
     
     if (isTestLogin) {
+      console.log("Using test login");
       const testUser = credentials.role === 'teacher' ? TEST_USERS.teacher : TEST_USERS.student;
       
       setAuthState({
@@ -109,6 +156,7 @@ export function useSupabaseAuth() {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
         // Continue even if this fails
+        console.log("Signout before login failed:", err);
       }
 
       // Real login with Supabase
@@ -118,6 +166,7 @@ export function useSupabaseAuth() {
       });
 
       if (error) {
+        console.error("Supabase login error:", error);
         toast({
           title: "Login Failed",
           description: error.message,
@@ -126,11 +175,14 @@ export function useSupabaseAuth() {
         throw error;
       }
 
+      console.log("Supabase login successful:", data);
+
       // Set user role for profile lookup
       setIntendedRole(credentials.role);
 
       return Promise.resolve();
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login Failed",
         description: error.message || "Invalid credentials. Please try again.",

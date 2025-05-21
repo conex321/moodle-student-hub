@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 import { SchoolLogo } from "@/components/ui/school-logo";
 import { UserRole } from "@/types/auth";
@@ -8,14 +8,12 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function Auth() {
   // Fixed userType to be "teacher" only
   const [userType] = useState<UserRole>("teacher");
-  const {
-    setUserRole
-  } = useAuth();
+  const { setUserRole } = useAuth();
   
   // Set role to teacher on component mount
-  useState(() => {
+  useEffect(() => {
     setUserRole("teacher");
-  });
+  }, [setUserRole]);
 
   return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f7911d]/80 to-[#f7911d]/60">
       <div className="w-full max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-center gap-8">

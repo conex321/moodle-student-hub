@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserRole } from "@/types/auth";
@@ -32,7 +33,22 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
     onError(null);
     setIsLoading(true);
 
+    // Validate inputs
+    if (!email.trim()) {
+      onError("Email is required");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!password.trim()) {
+      onError("Password is required");
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      console.log("Attempting login with:", { email, role: userType });
+
       await login({
         email,
         password,
@@ -40,9 +56,12 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
         rememberMe,
       });
       
+      console.log("Login successful, redirecting to teacher dashboard");
+      
       // Always redirect to teacher dashboard
       navigate("/teacher/dashboard");
     } catch (err: any) {
+      console.error("Login error:", err);
       onError(err.message || "Invalid credentials. Please try again.");
     } finally {
       setIsLoading(false);
@@ -54,6 +73,8 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
     setIsLoading(true);
 
     try {
+      console.log("Attempting test teacher login");
+      
       await login({
         email: "teacher@test.com",
         password: "test123",
@@ -61,9 +82,12 @@ export function LoginTab({ userType, onError, error }: LoginTabProps) {
         rememberMe: false,
       });
       
+      console.log("Test login successful, redirecting to teacher dashboard");
+      
       // Always go to teacher dashboard
       navigate("/teacher/dashboard");
     } catch (err) {
+      console.error("Test login error:", err);
       onError("Test login failed. Please try again.");
     } finally {
       setIsLoading(false);
