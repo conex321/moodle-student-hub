@@ -1,5 +1,5 @@
 
-import { UserCog, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { 
   Table, 
   TableHeader, 
@@ -9,21 +9,12 @@ import {
   TableCell 
 } from "@/components/ui/table";
 import { User } from "@/types/user";
-import { useNavigate } from "react-router-dom";
 
 interface UserTableProps {
   users: User[];
 }
 
 export const UserTable = ({ users }: UserTableProps) => {
-  const navigate = useNavigate();
-
-  const handleEditUser = (user: User) => {
-    if (user.role === "teacher") {
-      navigate("/admin/school-access", { state: { teacherId: user.id } });
-    }
-  };
-
   return (
     <div className="rounded-md border">
       <Table>
@@ -61,14 +52,6 @@ export const UserTable = ({ users }: UserTableProps) => {
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
-                  <button 
-                    className={`text-blue-600 hover:text-blue-900 mr-4 ${user.role === 'teacher' ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
-                    onClick={() => handleEditUser(user)}
-                    title={user.role === 'teacher' ? "Manage school access" : "Only available for teachers"}
-                    disabled={user.role !== 'teacher'}
-                  >
-                    <UserCog className="h-4 w-4" />
-                  </button>
                   <button className="text-gray-500 hover:text-gray-900">
                     <MoreHorizontal className="h-4 w-4" />
                   </button>

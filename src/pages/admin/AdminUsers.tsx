@@ -1,10 +1,11 @@
 
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus } from "lucide-react";
+import { UserCog, UserPlus } from "lucide-react";
 import { UserDataProvider, useUserData } from "@/contexts/UserDataContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -25,6 +26,11 @@ const UsersContent = () => {
     getFilteredUsers,
     isLoading
   } = useUserData();
+  const navigate = useNavigate();
+
+  const handleManageTeacherAccess = () => {
+    navigate("/admin/school-access");
+  };
 
   return (
     <div className="space-y-6">
@@ -53,7 +59,7 @@ const UsersContent = () => {
           <CardDescription>
             View and manage all users in the system
           </CardDescription>
-          <div className="mt-4 flex justify-between items-center">
+          <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <UserSearch 
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -67,6 +73,18 @@ const UsersContent = () => {
                 <TabsTrigger value="admins">Admins</TabsTrigger>
               </TabsList>
             </Tabs>
+          </div>
+          
+          {/* Add the Manage Teacher School Access button */}
+          <div className="mt-4 flex justify-end">
+            <Button 
+              variant="outline" 
+              onClick={handleManageTeacherAccess}
+              className="flex items-center gap-2"
+            >
+              <UserCog className="h-4 w-4" />
+              Manage Teacher School Access
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
