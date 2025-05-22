@@ -74,7 +74,7 @@ const App = () => (
             <Route path="/admin/moodle-config" element={<AdminMoodleConfig />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/school-access" element={<TeacherSchoolAccess />} />
-            <Route path="/admin/createschoole" element={<CreateSchoolForm/>} />
+            <Route path="/admin/create-school" element={<CreateSchoolForm />} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
