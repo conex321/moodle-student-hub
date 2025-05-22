@@ -128,9 +128,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-white hover:bg-gray-800"
-                onClick={() => navigate('/admin/createschoole')}
+                onClick={() => navigate('/admin/createschool')}
               >
-                Create Schoole
+                Create School
               </Button>
             </li>
           </ul>
