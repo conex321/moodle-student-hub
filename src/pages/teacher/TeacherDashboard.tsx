@@ -1,66 +1,90 @@
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { moodleApi } from "@/services/moodleApi";
 import { statisticsApi, SchoolStatistics } from "@/services/statisticsApi";
 import { MoodleCourse, MoodleStudent } from "@/types/moodle";
-import { Book, GraduationCap, School, User, Users } from "lucide-react";
+import { Book, GraduationCap, School, User, Users, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function TeacherDashboard() {
   const { authState } = useAuth();
+  const { toast } = useToast();
   const [courses, setCourses] = useState<MoodleCourse[]>([]);
   const [students, setStudents] = useState<MoodleStudent[]>([]);
   const [statistics, setStatistics] = useState<SchoolStatistics | null>(null);
   const [filteredStatistics, setFilteredStatistics] = useState<SchoolStatistics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [isRefreshingProfile, setIsRefreshingProfile] = useState(false);
   const [accessibleSchools, setAccessibleSchools] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!authState.user?.id || !authState.isAuthenticated) {
-        console.log('No authenticated user, skipping profile fetch');
+  const fetchUserProfile = async () => {
+    if (!authState.user?.id || !authState.isAuthenticated) {
+      console.log('No authenticated user, skipping profile fetch');
+      setAccessibleSchools([]);
+      return;
+    }
+
+    try {
+      console.log('Fetching profile for user ID:', authState.user.id);
+
+      // Query Supabase for the user's profile
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('accessible_schools')
+        .eq('id', authState.user.id);
+
+      // Log the raw response for debugging
+      console.log('Supabase profiles response:', { profiles, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
         setAccessibleSchools([]);
         return;
       }
 
-      try {
-        console.log('Fetching profile for user ID:', authState.user.id);
-
-        // Query Supabase for the user's profile
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select('accessible_schools')
-          .eq('id', authState.user.id);
-
-        // Log the raw response for debugging
-        console.log('Supabase profiles response:', { profiles, error });
-
-        if (error) {
-          console.error('Supabase error:', error);
-          setAccessibleSchools([]);
-          return;
-        }
-
-        if (!profiles || profiles.length === 0) {
-          console.log('No profile found for user ID:', authState.user.id);
-          setAccessibleSchools([]);
-          return;
-        }
-
-        const profile = profiles[0]; // Get the first (and should be only) result
-        const schools = profile?.accessible_schools || [];
-        setAccessibleSchools(schools);
-        console.log('Teacher accessible schools:', schools);
-      } catch (error) {
-        console.error('Unexpected error fetching profile:', error);
+      if (!profiles || profiles.length === 0) {
+        console.log('No profile found for user ID:', authState.user.id);
         setAccessibleSchools([]);
+        return;
       }
-    };
 
+      const profile = profiles[0]; // Get the first (and should be only) result
+      const schools = profile?.accessible_schools || [];
+      setAccessibleSchools(schools);
+      console.log('Teacher accessible schools:', schools);
+    } catch (error) {
+      console.error('Unexpected error fetching profile:', error);
+      setAccessibleSchools([]);
+    }
+  };
+
+  const handleRefreshProfile = async () => {
+    setIsRefreshingProfile(true);
+    try {
+      await fetchUserProfile();
+      toast({
+        title: "Profile refreshed",
+        description: "Your accessible schools have been updated",
+      });
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+      toast({
+        title: "Refresh failed",
+        description: "Could not refresh your profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshingProfile(false);
+    }
+  };
+
+  useEffect(() => {
     // Only fetch profile if user is authenticated
     if (authState.isAuthenticated && authState.user?.id) {
       fetchUserProfile();
@@ -160,9 +184,20 @@ export default function TeacherDashboard() {
   return (
     <MainLayout requiredRole="teacher">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
-          <p className="text-lg text-gray-600">Welcome back!</p>
+          <div className="flex items-center gap-2">
+            <p className="text-lg text-gray-600">Welcome back!</p>
+            <Button 
+              variant="outline" 
+              onClick={handleRefreshProfile}
+              disabled={isRefreshingProfile}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshingProfile ? 'animate-spin' : ''}`} />
+              {isRefreshingProfile ? 'Refreshing...' : 'Refresh Access'}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
