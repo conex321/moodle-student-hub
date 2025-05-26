@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { User, UserRole, NewUser } from "@/types/user";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +35,12 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState("all");
   const { toast } = useToast();
 
+  // Check if user is admin
+  const isAdmin = () => {
+    const adminUser = localStorage.getItem('moodle_hub_admin');
+    return !!adminUser;
+  };
+
   // Fetch users from Supabase profiles table
   const fetchUsers = async () => {
     try {
@@ -44,23 +49,42 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       console.log("=== FETCH USERS DEBUG START ===");
       console.log("1. Starting fetchUsers function");
       
-      // Check if user is authenticated first
-      console.log("2. Checking auth session...");
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      console.log("3. Session result:", { session: !!session, error: sessionError });
-      
-      if (sessionError) {
-        console.error("4. Session error:", sessionError);
-        throw new Error("Authentication session error: " + sessionError.message);
+      // Check if this is an admin user first
+      if (isAdmin()) {
+        console.log("2. Admin user detected, skipping session check");
+        
+        // For admin users, we'll use service role or make the request differently
+        // Let's try to get the session anyway but don't fail if it doesn't exist
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.log("3. Session error (expected for admin):", sessionError);
+        }
+        
+        if (!session) {
+          console.log("4. No session found for admin user - this is expected");
+          // For admin, we'll try to make the request anyway
+        }
+      } else {
+        // For regular users, check session normally
+        console.log("2. Checking auth session for regular user...");
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        console.log("3. Session result:", { session: !!session, error: sessionError });
+        
+        if (sessionError) {
+          console.error("4. Session error:", sessionError);
+          throw new Error("Authentication session error: " + sessionError.message);
+        }
+        
+        if (!session) {
+          console.error("5. No active session found");
+          throw new Error("No active session - user not authenticated");
+        }
+        
+        console.log("6. Session found, user ID:", session.user.id);
       }
       
-      if (!session) {
-        console.error("5. No active session found");
-        throw new Error("No active session - user not authenticated");
-      }
-      
-      console.log("6. Session found, user ID:", session.user.id);
       console.log("7. About to make Supabase query...");
       
       // Make the actual Supabase request
@@ -134,7 +158,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         errorMessage = "Authentication expired. Please log in again.";
       } else if (error.message?.includes("permission")) {
         errorMessage = "You don't have permission to view users.";
-      } else if (error.message?.includes("session")) {
+      } else if (error.message?.includes("session") && !isAdmin()) {
         errorMessage = "Authentication session error. Please refresh and try again.";
       } else if (error.message) {
         errorMessage = error.message;
