@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { 
   Book, 
@@ -14,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types/auth";
+import { useState } from "react";
 
 interface SidebarItem {
   icon: typeof Home;
@@ -28,6 +28,7 @@ interface SidebarProps {
 export function Sidebar({ role }: SidebarProps) {
   const location = useLocation();
   const { logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const studentItems: SidebarItem[] = [
     { icon: Home, label: "Dashboard", href: "/student/dashboard" },
@@ -49,8 +50,22 @@ export function Sidebar({ role }: SidebarProps) {
   const items = role === "student" ? studentItems : teacherItems;
   
   const handleLogout = async () => {
-    await logout();
-    window.location.href = "/";
+    if (isLoggingOut) {
+      console.log('Logout already in progress, ignoring click');
+      return;
+    }
+
+    console.log('Logout button clicked');
+    setIsLoggingOut(true);
+    
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Note: We don't reset isLoggingOut here because the page will redirect
+      // If logout fails, the page will still redirect due to the error handling in logout()
+    }
   };
 
   return (
@@ -87,9 +102,10 @@ export function Sidebar({ role }: SidebarProps) {
           variant="outline" 
           className="w-full justify-start text-lg font-medium"
           onClick={handleLogout}
+          disabled={isLoggingOut}
         >
           <LogOut className="mr-3 h-5 w-5" />
-          Logout
+          {isLoggingOut ? 'Logging out...' : 'Logout'}
         </Button>
       </div>
     </aside>

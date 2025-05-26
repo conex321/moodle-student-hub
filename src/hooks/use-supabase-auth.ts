@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, AuthState, LoginCredentials, UserRole } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -318,29 +319,101 @@ export function useSupabaseAuth() {
   };
 
   const logout = async () => {
-    // Clean up auth state
-    cleanupAuthState();
+    console.log('Logout initiated');
     
-    // Regular logout
     try {
-      await supabase.auth.signOut({ scope: 'global' });
+      // Set loading state to prevent multiple logout attempts
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: true
+      }));
+
+      // Clean up auth state first
+      cleanupAuthState();
+      
+      // Check if this is a test user logout
+      const storedUser = localStorage.getItem('moodle_hub_user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          if (userData.email === 'teacher@test.com' || userData.email === 'student@test.com') {
+            console.log('Logging out test user');
+            localStorage.removeItem('moodle_hub_user');
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+            window.location.href = '/auth';
+            return;
+          }
+        } catch (error) {
+          console.error('Error parsing stored user during logout:', error);
+        }
+      }
+
+      // For real Supabase users, attempt to sign out
+      console.log('Attempting Supabase signout');
+      
+      // Try global signout first
+      const { error: globalError } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (globalError) {
+        console.error('Global signout error:', globalError);
+        // If global signout fails, try local signout
+        const { error: localError } = await supabase.auth.signOut({ scope: 'local' });
+        if (localError) {
+          console.error('Local signout error:', localError);
+        }
+      }
+
+      console.log('Signout completed, cleaning up state');
+      
+      // Force state cleanup regardless of signout success
       setAuthState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
       });
-      // Remove any stored mock user data
+
+      // Remove any remaining stored data
       localStorage.removeItem('moodle_hub_user');
+      localStorage.removeItem('moodle_hub_admin');
+      
+      // Clear any Supabase auth data
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      console.log('Logout completed, redirecting to auth');
+      
+      // Force redirect
       window.location.href = '/auth';
+      
     } catch (error) {
       console.error('Logout error:', error);
-      // Force logout anyway
+      
+      // Force logout even if there's an error
       setAuthState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
       });
+      
+      // Clean up storage
       localStorage.removeItem('moodle_hub_user');
+      localStorage.removeItem('moodle_hub_admin');
+      cleanupAuthState();
+      
+      // Show error but still redirect
+      toast({
+        title: "Logout Warning",
+        description: "There was an issue during logout, but you have been signed out.",
+        variant: "destructive",
+      });
+      
       window.location.href = '/auth';
     }
   };
