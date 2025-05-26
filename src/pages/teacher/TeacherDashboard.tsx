@@ -7,13 +7,45 @@ import { statisticsApi, SchoolStatistics } from "@/services/statisticsApi";
 import { MoodleCourse, MoodleStudent } from "@/types/moodle";
 import { Book, GraduationCap, School, User, Users } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function TeacherDashboard() {
+  const { authState } = useAuth();
   const [courses, setCourses] = useState<MoodleCourse[]>([]);
   const [students, setStudents] = useState<MoodleStudent[]>([]);
   const [statistics, setStatistics] = useState<SchoolStatistics | null>(null);
+  const [filteredStatistics, setFilteredStatistics] = useState<SchoolStatistics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [accessibleSchools, setAccessibleSchools] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!authState.user?.id) return;
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('accessible_schools')
+          .eq('id', authState.user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          return;
+        }
+
+        const schools = profile?.accessible_schools || [];
+        setAccessibleSchools(schools);
+        console.log('Teacher accessible schools:', schools);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, [authState.user?.id]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,6 +76,49 @@ export default function TeacherDashboard() {
     fetchData();
     fetchStatistics();
   }, []);
+
+  useEffect(() => {
+    if (statistics && accessibleSchools.length > 0) {
+      // Filter statistics to show only accessible schools
+      const filteredSubmissionsBySchool = statistics.submissionsBySchool.filter(
+        school => accessibleSchools.includes(school.schoolName)
+      );
+
+      const filteredSchoolNames = statistics.schoolNames.filter(
+        schoolName => accessibleSchools.includes(schoolName)
+      );
+
+      const totalFilteredSubmissions = filteredSubmissionsBySchool.reduce(
+        (sum, school) => sum + school.submissionCount, 0
+      );
+
+      const avgSubmissions = filteredSubmissionsBySchool.length > 0 
+        ? totalFilteredSubmissions / filteredSubmissionsBySchool.length 
+        : 0;
+
+      const filtered: SchoolStatistics = {
+        totalSchools: filteredSchoolNames.length,
+        schoolNames: filteredSchoolNames,
+        totalSubmissions: totalFilteredSubmissions,
+        averageSubmissionsPerSchool: avgSubmissions,
+        submissionsBySchool: filteredSubmissionsBySchool
+      };
+
+      setFilteredStatistics(filtered);
+      console.log('Filtered statistics for teacher:', filtered);
+    } else if (statistics && accessibleSchools.length === 0) {
+      // If no accessible schools, show empty statistics
+      setFilteredStatistics({
+        totalSchools: 0,
+        schoolNames: [],
+        totalSubmissions: 0,
+        averageSubmissionsPerSchool: 0,
+        submissionsBySchool: []
+      });
+    }
+  }, [statistics, accessibleSchools]);
+
+  const displayStats = filteredStatistics || statistics;
 
   return (
     <MainLayout requiredRole="teacher">
@@ -86,13 +161,15 @@ export default function TeacherDashboard() {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-lg font-medium">Total Schools</CardTitle>
+              <CardTitle className="text-lg font-medium">Accessible Schools</CardTitle>
               <School className="h-5 w-5 text-teal" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{isStatsLoading ? '...' : statistics?.totalSchools || 0}</div>
+              <div className="text-3xl font-bold">
+                {isStatsLoading ? '...' : (displayStats?.totalSchools || 0)}
+              </div>
               <p className="text-xs text-muted-foreground">
-                In the system
+                Schools you have access to
               </p>
             </CardContent>
           </Card>
@@ -101,17 +178,17 @@ export default function TeacherDashboard() {
         {/* School Statistics Section */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>School Submissions</CardTitle>
+            <CardTitle>School Submissions (Your Access)</CardTitle>
           </CardHeader>
           <CardContent>
             {isStatsLoading ? (
               <div className="flex items-center justify-center h-80">
                 <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
-            ) : statistics ? (
+            ) : displayStats && displayStats.submissionsBySchool.length > 0 ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={statistics.submissionsBySchool}>
+                  <BarChart data={displayStats.submissionsBySchool}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="schoolName" />
                     <YAxis />
@@ -122,7 +199,10 @@ export default function TeacherDashboard() {
               </div>
             ) : (
               <div className="text-center py-6 text-gray-500">
-                No statistics available
+                {accessibleSchools.length === 0 
+                  ? "No schools assigned to you. Please contact your administrator."
+                  : "No statistics available for your assigned schools"
+                }
               </div>
             )}
           </CardContent>
@@ -162,29 +242,29 @@ export default function TeacherDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Schools Overview</CardTitle>
+              <CardTitle>Your Schools Overview</CardTitle>
             </CardHeader>
             <CardContent>
               {isStatsLoading ? (
                 <div className="flex items-center justify-center h-40">
                   <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full"></div>
                 </div>
-              ) : statistics ? (
+              ) : displayStats && displayStats.schoolNames.length > 0 ? (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center border-b pb-2">
                     <span className="font-medium">Total Submissions:</span>
-                    <span className="font-bold">{statistics.totalSubmissions.toLocaleString()}</span>
+                    <span className="font-bold">{displayStats.totalSubmissions.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center border-b pb-2">
                     <span className="font-medium">Average Submissions Per School:</span>
-                    <span className="font-bold">{statistics.averageSubmissionsPerSchool.toLocaleString(undefined, {
+                    <span className="font-bold">{displayStats.averageSubmissionsPerSchool.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
                     })}</span>
                   </div>
-                  <h3 className="font-medium text-lg pt-2">Schools</h3>
+                  <h3 className="font-medium text-lg pt-2">Your Assigned Schools</h3>
                   <ul className="divide-y">
-                    {statistics.schoolNames.map((school) => (
+                    {displayStats.schoolNames.map((school) => (
                       <li key={school} className="py-2">
                         {school}
                       </li>
@@ -193,7 +273,10 @@ export default function TeacherDashboard() {
                 </div>
               ) : (
                 <div className="text-center py-6 text-gray-500">
-                  No statistics available.
+                  {accessibleSchools.length === 0 
+                    ? "No schools assigned to you."
+                    : "No statistics available for your assigned schools."
+                  }
                 </div>
               )}
             </CardContent>
