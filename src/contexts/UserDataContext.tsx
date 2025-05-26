@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { User, UserRole, NewUser } from "@/types/user";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +14,7 @@ interface UserDataContextType {
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
   handleAddUser: () => Promise<void>;
   getFilteredUsers: () => User[];
+  refetchUsers: () => Promise<void>;
 }
 
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
@@ -36,51 +36,94 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   // Fetch users from Supabase profiles table
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        setIsLoading(true);
-        
-        console.log("Fetching users from profiles table...");
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, role, created_at');
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw error;
-        }
-
-        console.log("Profiles data received:", data);
-
-        // Transform the Supabase data to match our User type
-        const transformedUsers: User[] = data ? data.map(profile => ({
-          id: profile.id,
-          name: profile.full_name || 'Unknown',
-          email: profile.email || 'No email',
-          role: (profile.role as UserRole) || 'student',
-          status: 'active', // Default to active since we don't have this in profiles table
-        })) : [];
-
-        console.log("Transformed users:", transformedUsers);
-        setUsers(transformedUsers);
-      } catch (error: any) {
-        console.error('Error fetching users:', error.message);
-        toast({
-          title: "Error fetching users",
-          description: error.message || "Failed to load users",
-          variant: "destructive",
-        });
-        
-        // Set empty array on error to avoid undefined issues
-        setUsers([]);
-      } finally {
-        setIsLoading(false);
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      
+      console.log("Starting fetchUsers - checking auth session...");
+      
+      // Check if user is authenticated first
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        throw new Error("Authentication session error");
       }
-    }
+      
+      if (!session) {
+        console.error("No active session found");
+        throw new Error("No active session - user not authenticated");
+      }
+      
+      console.log("Session found, fetching users from profiles table...");
+      console.log("Session user:", session.user.id);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, role, created_at')
+        .order('created_at', { ascending: false });
 
+      console.log("Supabase query completed");
+      console.log("Data received:", data);
+      console.log("Error:", error);
+
+      if (error) {
+        console.error("Supabase query error:", error);
+        throw error;
+      }
+
+      if (!data) {
+        console.log("No data returned from query");
+        setUsers([]);
+        return;
+      }
+
+      // Transform the Supabase data to match our User type
+      const transformedUsers: User[] = data.map(profile => ({
+        id: profile.id,
+        name: profile.full_name || 'Unknown',
+        email: profile.email || 'No email',
+        role: (profile.role as UserRole) || 'student',
+        status: 'active', // Default to active since we don't have this in profiles table
+      }));
+
+      console.log("Transformed users:", transformedUsers);
+      setUsers(transformedUsers);
+      
+      toast({
+        title: "Users loaded",
+        description: `Found ${transformedUsers.length} users`,
+      });
+    } catch (error: any) {
+      console.error('Error fetching users:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to load users";
+      if (error.message?.includes("JWT")) {
+        errorMessage = "Authentication expired. Please log in again.";
+      } else if (error.message?.includes("permission")) {
+        errorMessage = "You don't have permission to view users.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Error fetching users",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      // Set empty array on error to avoid undefined issues
+      setUsers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log("UserDataContext mounted, calling fetchUsers...");
     fetchUsers();
-  }, [toast]);
+  }, []);
 
   const handleAddUser = async () => {
     try {
@@ -204,6 +247,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     setActiveTab,
     handleAddUser,
     getFilteredUsers,
+    refetchUsers: fetchUsers,
   };
 
   return (
