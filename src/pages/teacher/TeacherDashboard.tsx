@@ -29,22 +29,24 @@ export default function TeacherDashboard() {
 
       try {
         console.log('Fetching profile for user ID:', authState.user.id);
-        
-        // Use array query instead of single object query to avoid PGRST116 error
+
+        // Query Supabase for the user's profile
         const { data: profiles, error } = await supabase
           .from('profiles')
           .select('accessible_schools')
           .eq('id', authState.user.id);
-        console.log("data.profile: ", data)
+
+        // Log the raw response for debugging
+        console.log('Supabase profiles response:', { profiles, error });
 
         if (error) {
-          console.error('Error fetching user profile:', error);
+          console.error('Supabase error:', error);
           setAccessibleSchools([]);
           return;
         }
 
         if (!profiles || profiles.length === 0) {
-          console.log('No profile found for user:', authState.user.id);
+          console.log('No profile found for user ID:', authState.user.id);
           setAccessibleSchools([]);
           return;
         }
@@ -54,7 +56,7 @@ export default function TeacherDashboard() {
         setAccessibleSchools(schools);
         console.log('Teacher accessible schools:', schools);
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Unexpected error fetching profile:', error);
         setAccessibleSchools([]);
       }
     };
