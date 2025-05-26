@@ -21,7 +21,11 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!authState.user?.id) return;
+      if (!authState.user?.id || !authState.isAuthenticated) {
+        console.log('No authenticated user, skipping profile fetch');
+        setAccessibleSchools([]);
+        return;
+      }
 
       try {
         console.log('Fetching profile for user ID:', authState.user.id);
@@ -53,11 +57,21 @@ export default function TeacherDashboard() {
       }
     };
 
-    fetchUserProfile();
-  }, [authState.user?.id]);
+    // Only fetch profile if user is authenticated
+    if (authState.isAuthenticated && authState.user?.id) {
+      fetchUserProfile();
+    } else {
+      setAccessibleSchools([]);
+    }
+  }, [authState.user?.id, authState.isAuthenticated]);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!authState.isAuthenticated) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const fetchedCourses = await moodleApi.getCourses();
         setCourses(fetchedCourses.slice(0, 3)); // Show just a few for the dashboard
@@ -72,6 +86,11 @@ export default function TeacherDashboard() {
     };
 
     const fetchStatistics = async () => {
+      if (!authState.isAuthenticated) {
+        setIsStatsLoading(false);
+        return;
+      }
+
       try {
         const stats = await statisticsApi.getSchoolStatistics();
         setStatistics(stats);
@@ -82,9 +101,14 @@ export default function TeacherDashboard() {
       }
     };
 
-    fetchData();
-    fetchStatistics();
-  }, []);
+    if (authState.isAuthenticated) {
+      fetchData();
+      fetchStatistics();
+    } else {
+      setIsLoading(false);
+      setIsStatsLoading(false);
+    }
+  }, [authState.isAuthenticated]);
 
   useEffect(() => {
     if (statistics && accessibleSchools.length > 0) {

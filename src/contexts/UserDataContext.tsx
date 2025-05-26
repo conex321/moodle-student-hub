@@ -84,9 +84,18 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
   const handleAddUser = async () => {
     try {
-      // Instead of using the admin API, use the regular signup method
-      // and then manually insert the profile data
+      console.log("Starting user creation process...");
       
+      // Validate input
+      if (!newUser.name.trim() || !newUser.email.trim() || !newUser.password.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // First, sign up the user
       const { data: authData, error: signupError } = await supabase.auth.signUp({
         email: newUser.email,
@@ -100,12 +109,15 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (signupError) {
+        console.error("Signup error:", signupError);
         throw signupError;
       }
 
       if (!authData.user) {
-        throw new Error("Failed to create user");
+        throw new Error("Failed to create user - no user data returned");
       }
+
+      console.log("User created successfully:", authData.user.id);
 
       // Insert user profile in the profiles table manually using upsert to handle duplicates
       const { error: profileError } = await supabase
@@ -123,6 +135,11 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       if (profileError) {
         console.error('Profile creation error:', profileError);
         // Don't throw here as the user was created successfully
+        toast({
+          title: "User created with profile warning",
+          description: `${newUser.name} was created but there was an issue with the profile setup`,
+          variant: "destructive",
+        });
       }
 
       // Add the new user to our state
@@ -134,7 +151,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         status: 'active',
       };
 
-      setUsers([newUserData, ...users]);
+      setUsers(prevUsers => [newUserData, ...prevUsers]);
       
       // Reset form
       setNewUser({ name: "", email: "", password: "", role: "student" });
