@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, AuthState, LoginCredentials, UserRole } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,39 +15,119 @@ export function useSupabaseAuth() {
   const [intendedRole, setIntendedRole] = useState<UserRole>('student');
 
   useEffect(() => {
-    // Check for existing session in localStorage (for test users)
-    const storedUser = localStorage.getItem('moodle_hub_user');
-    if (storedUser) {
+    let isMounted = true;
+
+    const initializeAuth = async () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setAuthState({
-          user: parsedUser,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        console.log("Found stored test user:", parsedUser);
-        return; // Skip Supabase auth check if we have a test user
+        // Check for existing test user session first
+        const storedUser = localStorage.getItem('moodle_hub_user');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            if (isMounted) {
+              setAuthState({
+                user: parsedUser,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+              console.log("Found stored test user:", parsedUser);
+            }
+            return;
+          } catch (error) {
+            console.error("Error parsing stored user:", error);
+            localStorage.removeItem('moodle_hub_user');
+          }
+        }
+
+        // Get current session immediately
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          if (isMounted) {
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+          }
+          return;
+        }
+
+        if (session && session.user) {
+          console.log("Found existing session:", session.user.id);
+          
+          try {
+            // Get user profile
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id);
+
+            if (isMounted) {
+              const profile = profiles && profiles.length > 0 ? profiles[0] : null;
+              
+              const user: User = {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: profile?.full_name || session.user.email?.split('@')[0] || 'User',
+                role: (profile?.role as UserRole) || intendedRole,
+              };
+
+              setAuthState({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+            }
+          } catch (profileError) {
+            console.error("Error fetching profile:", profileError);
+            if (isMounted) {
+              setAuthState({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+              });
+            }
+          }
+        } else {
+          console.log("No existing session found");
+          if (isMounted) {
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+          }
+        }
       } catch (error) {
-        console.error("Error parsing stored user:", error);
-        localStorage.removeItem('moodle_hub_user');
+        console.error("Error initializing auth:", error);
+        if (isMounted) {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
       }
-    }
+    };
 
     // Set up the auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         
+        if (!isMounted) return;
+        
         if (session && session.user) {
           // User is authenticated, get profile details
           try {
-            const { data: profile } = await supabase
+            const { data: profiles } = await supabase
               .from('profiles')
               .select('*')
-              .eq('id', session.user.id)
-              .single();
+              .eq('id', session.user.id);
 
-            console.log("Profile data:", profile);
+            const profile = profiles && profiles.length > 0 ? profiles[0] : null;
 
             const user: User = {
               id: session.user.id,
@@ -82,35 +161,11 @@ export function useSupabaseAuth() {
       }
     );
 
-    // Check for existing session on mount
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          console.log("No existing session found");
-          setAuthState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
-        } else {
-          console.log("Existing session found:", session.user?.id);
-        }
-        // The onAuthStateChange handler will handle session if it exists
-      } catch (error) {
-        console.error("Error checking auth:", error);
-        setAuthState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
-      }
-    };
-
-    checkAuth();
+    // Initialize auth state
+    initializeAuth();
     
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [intendedRole]);
