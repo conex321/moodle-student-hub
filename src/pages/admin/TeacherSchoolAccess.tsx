@@ -75,10 +75,13 @@ export default function TeacherSchoolAccess() {
   const selectTeacher = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
     setAccessibleSchools(teacher.accessible_schools || []);
+    setNewSchool(""); // Clear the new school input when selecting a teacher
   };
   
   const addSchool = () => {
-    if (!newSchool.trim()) {
+    const trimmedSchoolName = newSchool.trim();
+    
+    if (!trimmedSchoolName) {
       toast({
         variant: "destructive",
         title: "School name required",
@@ -87,21 +90,38 @@ export default function TeacherSchoolAccess() {
       return;
     }
     
-    if (accessibleSchools.includes(newSchool)) {
+    if (accessibleSchools.includes(trimmedSchoolName)) {
       toast({
         variant: "destructive",
         title: "School already added",
-        description: `${newSchool} is already in the list of accessible schools`,
+        description: `${trimmedSchoolName} is already in the list of accessible schools`,
       });
       return;
     }
     
-    setAccessibleSchools([...accessibleSchools, newSchool]);
+    setAccessibleSchools([...accessibleSchools, trimmedSchoolName]);
     setNewSchool("");
+    
+    toast({
+      title: "School added",
+      description: `${trimmedSchoolName} has been added to the list. Don't forget to save changes.`,
+    });
   };
   
   const removeSchool = (school: string) => {
     setAccessibleSchools(accessibleSchools.filter(s => s !== school));
+    
+    toast({
+      title: "School removed",
+      description: `${school} has been removed from the list. Don't forget to save changes.`,
+    });
+  };
+  
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSchool();
+    }
   };
   
   const saveChanges = async () => {
@@ -122,6 +142,9 @@ export default function TeacherSchoolAccess() {
           ? { ...teacher, accessible_schools: accessibleSchools } 
           : teacher
       ));
+      
+      // Update the selected teacher as well
+      setSelectedTeacher({ ...selectedTeacher, accessible_schools: accessibleSchools });
       
       toast({
         title: "Changes saved",
@@ -188,6 +211,9 @@ export default function TeacherSchoolAccess() {
                             <TableCell className="py-2">
                               <div className="font-medium">{teacher.full_name || 'Unnamed'}</div>
                               <div className="text-sm text-muted-foreground">{teacher.email}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {teacher.accessible_schools?.length || 0} schools
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -221,6 +247,7 @@ export default function TeacherSchoolAccess() {
                         placeholder="Enter school name"
                         value={newSchool}
                         onChange={(e) => setNewSchool(e.target.value)}
+                        onKeyPress={handleKeyPress}
                       />
                       <Button onClick={addSchool} className="shrink-0">
                         <Plus className="h-4 w-4 mr-2" />
@@ -230,7 +257,7 @@ export default function TeacherSchoolAccess() {
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium mb-2">Current Accessible Schools</h3>
+                    <h3 className="text-sm font-medium mb-2">Current Accessible Schools ({accessibleSchools.length})</h3>
                     {accessibleSchools.length === 0 ? (
                       <p className="text-muted-foreground text-sm">No schools added yet</p>
                     ) : (
@@ -251,7 +278,7 @@ export default function TeacherSchoolAccess() {
                                     variant="ghost" 
                                     size="sm" 
                                     onClick={() => removeSchool(school)}
-                                    className="h-8 w-8 p-0 text-destructive"
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
