@@ -34,6 +34,7 @@ export default function TeacherDashboard() {
 
         if (error) {
           console.error('Error fetching user profile:', error);
+          setAccessibleSchools([]);
           return;
         }
 

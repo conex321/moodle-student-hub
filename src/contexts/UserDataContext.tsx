@@ -107,8 +107,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("Failed to create user");
       }
 
-      // Insert user profile in the profiles table manually
-      // This might be redundant if you have a trigger in Supabase that creates profiles automatically
+      // Insert user profile in the profiles table manually using upsert to handle duplicates
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -117,10 +116,13 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           email: newUser.email,
           role: newUser.role,
           created_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
         });
 
       if (profileError) {
-        throw profileError;
+        console.error('Profile creation error:', profileError);
+        // Don't throw here as the user was created successfully
       }
 
       // Add the new user to our state
