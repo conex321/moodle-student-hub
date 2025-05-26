@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,22 +32,40 @@ export default function TeacherSchoolAccess() {
     async function fetchTeachers() {
       try {
         setIsLoading(true);
+        console.log("Fetching teachers from profiles table...");
+        
         const { data, error } = await supabase
           .from('profiles')
           .select('id, email, full_name, accessible_schools')
           .eq('role', 'teacher');
           
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error fetching teachers:", error);
+          throw error;
+        }
+        
+        console.log("Teachers data received:", data);
+        
+        if (!data || data.length === 0) {
+          console.log("No teachers found in database");
+          toast({
+            title: "No teachers found",
+            description: "No teachers are currently registered in the system",
+          });
+        }
         
         setTeachers(data || []);
         setFilteredTeachers(data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching teachers:', error);
         toast({
           variant: "destructive",
           title: "Failed to load teachers",
-          description: error instanceof Error ? error.message : "Unknown error occurred",
+          description: error?.message || "An error occurred while fetching teachers",
         });
+        // Set empty array on error to prevent undefined issues
+        setTeachers([]);
+        setFilteredTeachers([]);
       } finally {
         setIsLoading(false);
       }

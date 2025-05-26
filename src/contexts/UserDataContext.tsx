@@ -47,16 +47,24 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
           .select('id, full_name, email, role, created_at');
 
         if (error) {
-          console.error("Supabase error:", error);
+          console.error("Supabase error fetching users:", error);
           throw error;
         }
 
         console.log("Profiles data received:", data);
 
+        if (!data || data.length === 0) {
+          console.log("No users found in database");
+          toast({
+            title: "No users found",
+            description: "No users are currently registered in the system",
+          });
+        }
+
         // Transform the Supabase data to match our User type
         const transformedUsers: User[] = data ? data.map(profile => ({
           id: profile.id,
-          name: profile.full_name || 'Unknown',
+          name: profile.full_name || 'Unknown User',
           email: profile.email || 'No email',
           role: (profile.role as UserRole) || 'student',
           status: 'active', // Default to active since we don't have this in profiles table
@@ -65,10 +73,10 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         console.log("Transformed users:", transformedUsers);
         setUsers(transformedUsers);
       } catch (error: any) {
-        console.error('Error fetching users:', error.message);
+        console.error('Error fetching users:', error);
         toast({
           title: "Error fetching users",
-          description: error.message || "Failed to load users",
+          description: error?.message || "Failed to load users from database",
           variant: "destructive",
         });
         
