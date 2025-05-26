@@ -33,7 +33,7 @@ export default function TeacherDashboard() {
         // Use array query instead of single object query to avoid PGRST116 error
         const { data: profiles, error } = await supabase
           .from('profiles')
-          // .select('accessible_schools')
+          .select('accessible_schools')
           .eq('id', authState.user.id);
         console.log("data.profile: ", data)
 
