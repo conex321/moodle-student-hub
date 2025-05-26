@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { User, UserRole, NewUser } from "@/types/user";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,62 +41,92 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
-      console.log("Starting fetchUsers - checking auth session...");
+      console.log("=== FETCH USERS DEBUG START ===");
+      console.log("1. Starting fetchUsers function");
       
       // Check if user is authenticated first
+      console.log("2. Checking auth session...");
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
+      console.log("3. Session result:", { session: !!session, error: sessionError });
+      
       if (sessionError) {
-        console.error("Session error:", sessionError);
-        throw new Error("Authentication session error");
+        console.error("4. Session error:", sessionError);
+        throw new Error("Authentication session error: " + sessionError.message);
       }
       
       if (!session) {
-        console.error("No active session found");
+        console.error("5. No active session found");
         throw new Error("No active session - user not authenticated");
       }
       
-      console.log("Session found, fetching users from profiles table...");
-      console.log("Session user:", session.user.id);
+      console.log("6. Session found, user ID:", session.user.id);
+      console.log("7. About to make Supabase query...");
       
+      // Make the actual Supabase request
+      const queryStartTime = Date.now();
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email, role, created_at')
         .order('created_at', { ascending: false });
 
-      console.log("Supabase query completed");
-      console.log("Data received:", data);
-      console.log("Error:", error);
+      const queryEndTime = Date.now();
+      console.log("8. Supabase query completed in", queryEndTime - queryStartTime, "ms");
+      console.log("9. Query result - data:", data);
+      console.log("10. Query result - error:", error);
 
       if (error) {
-        console.error("Supabase query error:", error);
+        console.error("11. Supabase query error details:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
       if (!data) {
-        console.log("No data returned from query");
+        console.log("12. No data returned from query, setting empty array");
         setUsers([]);
+        toast({
+          title: "No users found",
+          description: "No users were returned from the database",
+        });
         return;
       }
 
-      // Transform the Supabase data to match our User type
-      const transformedUsers: User[] = data.map(profile => ({
-        id: profile.id,
-        name: profile.full_name || 'Unknown',
-        email: profile.email || 'No email',
-        role: (profile.role as UserRole) || 'student',
-        status: 'active', // Default to active since we don't have this in profiles table
-      }));
+      console.log("13. Processing", data.length, "user records");
 
-      console.log("Transformed users:", transformedUsers);
+      // Transform the Supabase data to match our User type
+      const transformedUsers: User[] = data.map((profile, index) => {
+        console.log(`14.${index + 1}. Processing profile:`, profile);
+        return {
+          id: profile.id,
+          name: profile.full_name || 'Unknown',
+          email: profile.email || 'No email',
+          role: (profile.role as UserRole) || 'student',
+          status: 'active', // Default to active since we don't have this in profiles table
+        };
+      });
+
+      console.log("15. Transformed users:", transformedUsers);
       setUsers(transformedUsers);
       
       toast({
-        title: "Users loaded",
+        title: "Users loaded successfully",
         description: `Found ${transformedUsers.length} users`,
       });
+
+      console.log("=== FETCH USERS DEBUG END ===");
+      
     } catch (error: any) {
-      console.error('Error fetching users:', error);
+      console.error('=== FETCH USERS ERROR ===');
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      });
       
       // Provide more specific error messages
       let errorMessage = "Failed to load users";
@@ -103,6 +134,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         errorMessage = "Authentication expired. Please log in again.";
       } else if (error.message?.includes("permission")) {
         errorMessage = "You don't have permission to view users.";
+      } else if (error.message?.includes("session")) {
+        errorMessage = "Authentication session error. Please refresh and try again.";
       } else if (error.message) {
         errorMessage = error.message;
       }
