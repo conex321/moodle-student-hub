@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,14 +24,22 @@ export default function TeacherDashboard() {
       if (!authState.user?.id) return;
 
       try {
+        console.log('Fetching profile for user ID:', authState.user.id);
+        
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('accessible_schools')
           .eq('id', authState.user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching user profile:', error);
+          return;
+        }
+
+        if (!profile) {
+          console.log('No profile found for user:', authState.user.id);
+          setAccessibleSchools([]);
           return;
         }
 
@@ -41,6 +48,7 @@ export default function TeacherDashboard() {
         console.log('Teacher accessible schools:', schools);
       } catch (error) {
         console.error('Error fetching user profile:', error);
+        setAccessibleSchools([]);
       }
     };
 
