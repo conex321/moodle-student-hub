@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,20 +68,63 @@ export default function TeacherDashboard() {
   const handleRefreshProfile = async () => {
     setIsRefreshingProfile(true);
     try {
+      // First refresh the user profile
       await fetchUserProfile();
+      
+      // Then refresh all dashboard data
+      await Promise.all([
+        fetchMoodleData(),
+        fetchStatistics()
+      ]);
+      
       toast({
-        title: "Profile refreshed",
-        description: "Your accessible schools have been updated",
+        title: "Dashboard refreshed",
+        description: "Your profile and dashboard data have been updated",
       });
     } catch (error) {
-      console.error('Error refreshing profile:', error);
+      console.error('Error refreshing dashboard:', error);
       toast({
         title: "Refresh failed",
-        description: "Could not refresh your profile. Please try again.",
+        description: "Could not refresh your dashboard. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsRefreshingProfile(false);
+    }
+  };
+
+  const fetchMoodleData = async () => {
+    if (!authState.isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const fetchedCourses = await moodleApi.getCourses();
+      setCourses(fetchedCourses.slice(0, 3)); // Show just a few for the dashboard
+      
+      const fetchedStudents = await moodleApi.getAllStudents();
+      setStudents(fetchedStudents.slice(0, 5)); // Show just a few for the dashboard
+    } catch (error) {
+      console.error('Error fetching Moodle data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchStatistics = async () => {
+    if (!authState.isAuthenticated) {
+      setIsStatsLoading(false);
+      return;
+    }
+
+    try {
+      const stats = await statisticsApi.getSchoolStatistics();
+      setStatistics(stats);
+    } catch (error) {
+      console.error('Error fetching statistics:', error);
+    } finally {
+      setIsStatsLoading(false);
     }
   };
 
@@ -94,43 +138,8 @@ export default function TeacherDashboard() {
   }, [authState.user?.id, authState.isAuthenticated]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!authState.isAuthenticated) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const fetchedCourses = await moodleApi.getCourses();
-        setCourses(fetchedCourses.slice(0, 3)); // Show just a few for the dashboard
-        
-        const fetchedStudents = await moodleApi.getAllStudents();
-        setStudents(fetchedStudents.slice(0, 5)); // Show just a few for the dashboard
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const fetchStatistics = async () => {
-      if (!authState.isAuthenticated) {
-        setIsStatsLoading(false);
-        return;
-      }
-
-      try {
-        const stats = await statisticsApi.getSchoolStatistics();
-        setStatistics(stats);
-      } catch (error) {
-        console.error('Error fetching statistics:', error);
-      } finally {
-        setIsStatsLoading(false);
-      }
-    };
-
     if (authState.isAuthenticated) {
-      fetchData();
+      fetchMoodleData();
       fetchStatistics();
     } else {
       setIsLoading(false);
@@ -179,7 +188,28 @@ export default function TeacherDashboard() {
     }
   }, [statistics, accessibleSchools]);
 
-  const displayStats = filteredStatistics || statistics;
+  // Calculate display values for the top cards
+  const getDisplayStats = () => {
+    if (isStatsLoading) {
+      return {
+        totalSubmissions: '...',
+        accessibleSchools: '...',
+        totalSchools: '...'
+      };
+    }
+
+    const totalSubmissions = filteredStatistics?.totalSubmissions || 0;
+    const accessibleSchoolsCount = accessibleSchools.length;
+    const totalSchools = statistics?.totalSchools || 0;
+
+    return {
+      totalSubmissions: totalSubmissions.toLocaleString(),
+      accessibleSchools: accessibleSchoolsCount.toString(),
+      totalSchools: totalSchools.toString()
+    };
+  };
+
+  const displayStats = getDisplayStats();
 
   return (
     <MainLayout requiredRole="teacher">
@@ -195,7 +225,7 @@ export default function TeacherDashboard() {
               className="flex items-center gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshingProfile ? 'animate-spin' : ''}`} />
-              {isRefreshingProfile ? 'Refreshing...' : 'Refresh Access'}
+              {isRefreshingProfile ? 'Refreshing...' : 'Refresh Dashboard'}
             </Button>
           </div>
         </div>
@@ -203,30 +233,15 @@ export default function TeacherDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-lg font-medium">Active Courses</CardTitle>
-              <Book className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg font-medium">Total Submissions</CardTitle>
+              <GraduationCap className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {isLoading ? '...' : courses.length}
+                {displayStats.totalSubmissions}
               </div>
               <p className="text-xs text-muted-foreground">
-                Courses you're teaching
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-lg font-medium">Total Students</CardTitle>
-              <Users className="h-5 w-5 text-blue" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {isLoading ? '...' : students.length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Across all your courses
+                From your accessible schools
               </p>
             </CardContent>
           </Card>
@@ -234,14 +249,29 @@ export default function TeacherDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-lg font-medium">Accessible Schools</CardTitle>
-              <School className="h-5 w-5 text-teal" />
+              <School className="h-5 w-5 text-blue-500" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {isStatsLoading ? '...' : (displayStats?.totalSchools || 0)}
+                {displayStats.accessibleSchools}
               </div>
               <p className="text-xs text-muted-foreground">
                 Schools you have access to
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-lg font-medium">Total Schools</CardTitle>
+              <School className="h-5 w-5 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {displayStats.totalSchools}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                In the entire system
               </p>
             </CardContent>
           </Card>
@@ -257,10 +287,10 @@ export default function TeacherDashboard() {
               <div className="flex items-center justify-center h-80">
                 <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
-            ) : displayStats && displayStats.submissionsBySchool.length > 0 ? (
+            ) : filteredStatistics && filteredStatistics.submissionsBySchool.length > 0 ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={displayStats.submissionsBySchool}>
+                  <BarChart data={filteredStatistics.submissionsBySchool}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="schoolName" />
                     <YAxis />
@@ -321,22 +351,22 @@ export default function TeacherDashboard() {
                 <div className="flex items-center justify-center h-40">
                   <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full"></div>
                 </div>
-              ) : displayStats && displayStats.schoolNames.length > 0 ? (
+              ) : filteredStatistics && filteredStatistics.schoolNames.length > 0 ? (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center border-b pb-2">
                     <span className="font-medium">Total Submissions:</span>
-                    <span className="font-bold">{displayStats.totalSubmissions.toLocaleString()}</span>
+                    <span className="font-bold">{filteredStatistics.totalSubmissions.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center border-b pb-2">
                     <span className="font-medium">Average Submissions Per School:</span>
-                    <span className="font-bold">{displayStats.averageSubmissionsPerSchool.toLocaleString(undefined, {
+                    <span className="font-bold">{filteredStatistics.averageSubmissionsPerSchool.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
                     })}</span>
                   </div>
                   <h3 className="font-medium text-lg pt-2">Your Assigned Schools</h3>
                   <ul className="divide-y">
-                    {displayStats.schoolNames.map((school) => (
+                    {filteredStatistics.schoolNames.map((school) => (
                       <li key={school} className="py-2">
                         {school}
                       </li>
