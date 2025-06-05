@@ -32,37 +32,83 @@ export default function TeacherSchoolAccess() {
     async function fetchTeachers() {
       try {
         setIsLoading(true);
-        console.log("Fetching teachers from profiles table...");
+        console.log("=== FETCH TEACHERS DEBUG START ===");
+        console.log("1. Fetching teachers from profiles table...");
         
         const { data, error } = await supabase
           .from('profiles')
           .select('id, email, full_name, accessible_schools')
           .eq('role', 'teacher');
           
+        console.log("2. Query result - data:", data);
+        console.log("3. Query result - error:", error);
+          
         if (error) {
-          console.error("Supabase error fetching teachers:", error);
-          throw error;
+          console.error("4. Supabase error fetching teachers:", error);
+          
+          let errorMessage = "Failed to load teachers";
+          if (error.message?.includes("JWT") || error.message?.includes("token")) {
+            errorMessage = "Authentication error. Please refresh the page and try again.";
+          } else if (error.message?.includes("permission")) {
+            errorMessage = "You don't have permission to view teacher profiles.";
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          toast({
+            variant: "destructive",
+            title: "Failed to load teachers",
+            description: errorMessage,
+          });
+          
+          setTeachers([]);
+          setFilteredTeachers([]);
+          return;
         }
         
-        console.log("Teachers data received:", data);
+        console.log("5. Teachers data received:", data);
         
         if (!data || data.length === 0) {
-          console.log("No teachers found in database");
+          console.log("6. No teachers found in database");
           toast({
             title: "No teachers found",
             description: "No teachers are currently registered in the system",
           });
+          setTeachers([]);
+          setFilteredTeachers([]);
+        } else {
+          console.log("7. Setting", data.length, "teachers");
+          setTeachers(data || []);
+          setFilteredTeachers(data || []);
+          
+          toast({
+            title: "Teachers loaded successfully",
+            description: `Found ${data.length} teachers`,
+          });
         }
         
-        setTeachers(data || []);
-        setFilteredTeachers(data || []);
+        console.log("=== FETCH TEACHERS DEBUG END ===");
       } catch (error: any) {
-        console.error('Error fetching teachers:', error);
+        console.error('=== FETCH TEACHERS ERROR ===');
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+        
+        let errorMessage = "An unexpected error occurred while fetching teachers";
+        if (error.message?.includes("fetch")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
         toast({
           variant: "destructive",
           title: "Failed to load teachers",
-          description: error?.message || "An error occurred while fetching teachers",
+          description: errorMessage,
         });
+        
         // Set empty array on error to prevent undefined issues
         setTeachers([]);
         setFilteredTeachers([]);

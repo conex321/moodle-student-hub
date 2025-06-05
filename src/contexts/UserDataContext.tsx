@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { User, UserRole, NewUser } from "@/types/user";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,44 +49,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       
       console.log("=== FETCH USERS DEBUG START ===");
       console.log("1. Starting fetchUsers function");
-      
-      // Check if this is an admin user first
-      if (isAdmin()) {
-        console.log("2. Admin user detected, skipping session check");
-        
-        // For admin users, we'll use service role or make the request differently
-        // Let's try to get the session anyway but don't fail if it doesn't exist
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.log("3. Session error (expected for admin):", sessionError);
-        }
-        
-        if (!session) {
-          console.log("4. No session found for admin user - this is expected");
-          // For admin, we'll try to make the request anyway
-        }
-      } else {
-        // For regular users, check session normally
-        console.log("2. Checking auth session for regular user...");
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        console.log("3. Session result:", { session: !!session, error: sessionError });
-        
-        if (sessionError) {
-          console.error("4. Session error:", sessionError);
-          throw new Error("Authentication session error: " + sessionError.message);
-        }
-        
-        if (!session) {
-          console.error("5. No active session found");
-          throw new Error("No active session - user not authenticated");
-        }
-        
-        console.log("6. Session found, user ID:", session.user.id);
-      }
-      
-      console.log("7. About to make Supabase query...");
+      console.log("2. Admin check:", isAdmin());
       
       // Make the actual Supabase request
       const queryStartTime = Date.now();
@@ -95,22 +59,40 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         .order('created_at', { ascending: false });
 
       const queryEndTime = Date.now();
-      console.log("8. Supabase query completed in", queryEndTime - queryStartTime, "ms");
-      console.log("9. Query result - data:", data);
-      console.log("10. Query result - error:", error);
+      console.log("3. Supabase query completed in", queryEndTime - queryStartTime, "ms");
+      console.log("4. Query result - data:", data);
+      console.log("5. Query result - error:", error);
 
       if (error) {
-        console.error("11. Supabase query error details:", {
+        console.error("6. Supabase query error details:", {
           message: error.message,
           details: error.details,
           hint: error.hint,
           code: error.code
         });
-        throw error;
+        
+        // More specific error handling
+        let errorMessage = "Failed to load users";
+        if (error.message?.includes("JWT") || error.message?.includes("token")) {
+          errorMessage = "Authentication error. Please refresh the page and try again.";
+        } else if (error.message?.includes("permission")) {
+          errorMessage = "You don't have permission to view users.";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        toast({
+          title: "Error fetching users",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        
+        setUsers([]);
+        return;
       }
 
       if (!data) {
-        console.log("12. No data returned from query, setting empty array");
+        console.log("7. No data returned from query, setting empty array");
         setUsers([]);
         toast({
           title: "No users found",
@@ -119,11 +101,11 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      console.log("13. Processing", data.length, "user records");
+      console.log("8. Processing", data.length, "user records");
 
       // Transform the Supabase data to match our User type
       const transformedUsers: User[] = data.map((profile, index) => {
-        console.log(`14.${index + 1}. Processing profile:`, profile);
+        console.log(`9.${index + 1}. Processing profile:`, profile);
         return {
           id: profile.id,
           name: profile.full_name || 'Unknown',
@@ -133,7 +115,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
         };
       });
 
-      console.log("15. Transformed users:", transformedUsers);
+      console.log("10. Transformed users:", transformedUsers);
       setUsers(transformedUsers);
       
       toast({
@@ -154,12 +136,8 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
       
       // Provide more specific error messages
       let errorMessage = "Failed to load users";
-      if (error.message?.includes("JWT")) {
-        errorMessage = "Authentication expired. Please log in again.";
-      } else if (error.message?.includes("permission")) {
-        errorMessage = "You don't have permission to view users.";
-      } else if (error.message?.includes("session") && !isAdmin()) {
-        errorMessage = "Authentication session error. Please refresh and try again.";
+      if (error.message?.includes("fetch")) {
+        errorMessage = "Network error. Please check your connection and try again.";
       } else if (error.message) {
         errorMessage = error.message;
       }
