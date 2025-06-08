@@ -114,17 +114,10 @@ export default function TeacherGrades() {
 
   useEffect(() => {
     const fetchReports = async () => {
-      if (accessibleSchools.length === 0) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        console.log('Sending POST request with accessible schools:', accessibleSchools);
+        console.log('Fetching all reports from endpoint');
         
-        const response = await axios.post('https://ungradedassignmentsendpoint.myeducrm.net/reports', {
-          schoolNames: accessibleSchools
-        });
+        const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
         
         const fetchedReports: Report[] = response.data;
         console.log('Received reports:', fetchedReports.length);
@@ -153,7 +146,7 @@ export default function TeacherGrades() {
     };
 
     fetchReports();
-  }, [accessibleSchools]);
+  }, []);
 
   const debouncedHandleFilterChange = debounce((schoolName: string, value: string) => {
     setFilter((prev) => ({ ...prev, [schoolName]: value }));
@@ -161,17 +154,10 @@ export default function TeacherGrades() {
   }, 300);
 
   const fetchSchoolReport = async (schoolName: string) => {
-    if (!accessibleSchools.includes(schoolName)) {
-      setError(`You don't have access to ${schoolName}`);
-      return;
-    }
-
     try {
-      const response = await axios.post('https://ungradedassignmentsendpoint.myeducrm.net/reports', {
-        schoolNames: [schoolName]
-      });
+      const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
       
-      const updatedReport = response.data[0];
+      const updatedReport = response.data.find((r: Report) => r.schoolName === schoolName);
       if (updatedReport) {
         setReports((prev) =>
           prev.map((r) => (r.schoolName === schoolName ? updatedReport : r))
@@ -198,10 +184,6 @@ export default function TeacherGrades() {
   };
 
   const handleSchoolSelect = (schoolName: string) => {
-    if (!accessibleSchools.includes(schoolName)) {
-      setError(`You don't have access to ${schoolName}`);
-      return;
-    }
     setSelectedSchool(schoolName);
   };
 
@@ -229,21 +211,6 @@ export default function TeacherGrades() {
     );
   }
 
-  if (accessibleSchools.length === 0) {
-    return (
-      <MainLayout requiredRole="teacher">
-        <Box className="mx-4 my-8 max-w-2xl mx-auto">
-          <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
-            No School Access
-          </Typography>
-          <Typography variant="body1" className="text-gray-600">
-            You don't have access to any schools. Please contact your administrator to assign schools to your profile.
-          </Typography>
-        </Box>
-      </MainLayout>
-    );
-  }
-
   if (!selectedSchool) {
     return (
       <MainLayout requiredRole="teacher">
@@ -263,7 +230,7 @@ export default function TeacherGrades() {
               Select a School
             </Typography>
             <Typography variant="body2" className="text-gray-600 mb-4">
-              You have access to {accessibleSchools.length} school{accessibleSchools.length !== 1 ? 's' : ''}
+              Available schools: {reports.length}
             </Typography>
             <List className="bg-white shadow-lg rounded-lg">
               {reports.map((report) => (
@@ -291,7 +258,7 @@ export default function TeacherGrades() {
     return (
       <MainLayout requiredRole="teacher">
         <Box m={2}>
-          <Typography color="error">Report not found or you don't have access to this school</Typography>
+          <Typography color="error">Report not found</Typography>
           <Button
             variant="outlined"
             color="primary"
