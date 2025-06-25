@@ -124,7 +124,7 @@ const Reports: React.FC = () => {
       }
 
       try {
-        const response = await axios.get('http://localhost:4005/reports');
+        const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
         const allReports: Report[] = response.data;
         
         // Filter reports to only include schools the teacher has access to
@@ -178,7 +178,7 @@ const Reports: React.FC = () => {
 
     try {
       const response = await axios.get<Report>(
-        `http://localhost:4005/reports/${schoolName}`
+        `https://ungradedassignmentsendpoint.myeducrm.net/reports/${schoolName}`
       );
       setReports((prev) =>
         prev.map((r) => (r.schoolName === schoolName ? response.data : r))
