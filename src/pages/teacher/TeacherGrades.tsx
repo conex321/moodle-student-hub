@@ -128,7 +128,7 @@ export default function TeacherGrades() {
       try {
         console.log('Fetching all reports from endpoint');
         
-        const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
+        const response = await axios.get('http://localhost:4005/reports');
         
         const fetchedReports: Report[] = response.data;
         console.log('Received reports:', fetchedReports.length);
@@ -177,7 +177,7 @@ export default function TeacherGrades() {
 
   const fetchSchoolReport = async (schoolName: string) => {
     try {
-      const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
+      const response = await axios.get('http://localhost:4005/reports');
       
       const updatedReport = response.data.find((r: Report) => r.schoolName === schoolName);
       if (updatedReport) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { MainLayout } from "@/components/layout/main-layout";
 import { debounce } from 'lodash';
@@ -46,7 +45,13 @@ type Report = {
 
 type PageState = { [key: string]: number };
 type RowsPerPageState = { [key: string]: number };
-type FilterState = { [key: string]: string };
+type FilterState = { 
+  [key: string]: { 
+    submissionName: string; 
+    startDate: string; 
+    endDate: string 
+  } 
+};
 
 const Reports: React.FC = () => {
   const { authState } = useAuth();
@@ -119,7 +124,7 @@ const Reports: React.FC = () => {
       }
 
       try {
-        const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
+        const response = await axios.get('http://localhost:4005/reports');
         const allReports: Report[] = response.data;
         
         // Filter reports to only include schools the teacher has access to
@@ -140,7 +145,7 @@ const Reports: React.FC = () => {
         filteredReports.forEach((report) => {
           initialPage[report.schoolName] = 0;
           initialRowsPerPage[report.schoolName] = 5;
-          initialFilter[report.schoolName] = '';
+          initialFilter[report.schoolName] = { submissionName: '', startDate: '', endDate: '' };
         });
 
         setPage(initialPage);
@@ -156,8 +161,11 @@ const Reports: React.FC = () => {
     fetchReports();
   }, [accessibleSchools]);
 
-  const debouncedHandleFilterChange = debounce((schoolName: string, value: string) => {
-    setFilter((prev) => ({ ...prev, [schoolName]: value }));
+  const debouncedHandleFilterChange = debounce((schoolName: string, field: 'submissionName' | 'startDate' | 'endDate', value: string) => {
+    setFilter((prev) => ({
+      ...prev,
+      [schoolName]: { ...prev[schoolName], [field]: value }
+    }));
     setPage((prev) => ({ ...prev, [schoolName]: 0 }));
   }, 300);
 
@@ -170,7 +178,7 @@ const Reports: React.FC = () => {
 
     try {
       const response = await axios.get<Report>(
-        `https://ungradedassignmentsendpoint.myeducrm.net/reports/${schoolName}`
+        `http://localhost:4005/reports/${schoolName}`
       );
       setReports((prev) =>
         prev.map((r) => (r.schoolName === schoolName ? response.data : r))
@@ -190,8 +198,8 @@ const Reports: React.FC = () => {
     setPage((prev) => ({ ...prev, [schoolName]: 0 }));
   };
 
-  const handleFilterChange = (schoolName: string, event: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedHandleFilterChange(schoolName, event.target.value);
+  const handleFilterChange = (schoolName: string, field: 'submissionName' | 'startDate' | 'endDate', event: React.ChangeEvent<HTMLInputElement>) => {
+    debouncedHandleFilterChange(schoolName, field, event.target.value);
   };
 
   const handleSchoolSelect = (schoolName: string) => {
@@ -294,11 +302,19 @@ const Reports: React.FC = () => {
 
   const currentPage = page[report.schoolName] || 0;
   const currentRowsPerPage = rowsPerPage[report.schoolName] || 5;
-  const currentFilter = filter[report.schoolName] || '';
+  const currentFilter = filter[report.schoolName] || { submissionName: '', startDate: '', endDate: '' };
 
-  const filteredSubmissions = report.submissions.filter((submission) =>
-    submission.submissionName.toLowerCase().includes(currentFilter.toLowerCase())
-  );
+  const filteredSubmissions = report.submissions.filter((submission) => {
+    const matchesName = submission.submissionName.toLowerCase().includes(currentFilter.submissionName.toLowerCase());
+    const submissionDate = new Date(submission.dateSubmitted);
+    const startDate = currentFilter.startDate ? new Date(currentFilter.startDate) : null;
+    const endDate = currentFilter.endDate ? new Date(currentFilter.endDate) : null;
+
+    const matchesStartDate = !startDate || submissionDate >= startDate;
+    const matchesEndDate = !endDate || submissionDate <= endDate;
+
+    return matchesName && matchesStartDate && matchesEndDate;
+  });
 
   const paginatedSubmissions = filteredSubmissions.slice(
     currentPage * currentRowsPerPage,
@@ -333,13 +349,33 @@ const Reports: React.FC = () => {
         <Typography variant="body1" gutterBottom>
           <strong>Last Updated:</strong> {new Date(report.updatedAt).toLocaleString()}
         </Typography>
-        <TextField
-          label="Filter by Submission Name"
-          variant="outlined"
-          value={currentFilter}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, e)}
-          sx={{ mb: 2, width: '300px' }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <TextField
+            label="Filter by Submission Name"
+            variant="outlined"
+            value={currentFilter.submissionName}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, 'submissionName', e)}
+            sx={{ width: '300px' }}
+          />
+          <TextField
+            label="Start Date"
+            type="date"
+            variant="outlined"
+            value={currentFilter.startDate}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, 'startDate', e)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ width: '200px' }}
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            variant="outlined"
+            value={currentFilter.endDate}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, 'endDate', e)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ width: '200px' }}
+          />
+        </Box>
         {report.errorMessage ? (
           <Typography color="error" gutterBottom>
             {report.errorMessage}
