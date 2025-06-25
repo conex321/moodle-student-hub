@@ -6,6 +6,9 @@ import { debounce } from 'lodash';
 import axios from 'axios';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -26,6 +29,12 @@ import {
   ListItemText,
   ListItemButton,
 } from '@mui/material';
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 type Submission = {
   courseId: string;
@@ -48,6 +57,7 @@ type Report = {
 type PageState = { [key: string]: number };
 type RowsPerPageState = { [key: string]: number };
 type FilterState = { [key: string]: string };
+type DateFilterState = { [key: string]: { startDate?: Date; endDate?: Date } };
 
 export default function TeacherGrades() {
   const navigate = useNavigate();
@@ -59,6 +69,7 @@ export default function TeacherGrades() {
   const [page, setPage] = useState<PageState>({});
   const [rowsPerPage, setRowsPerPage] = useState<RowsPerPageState>({});
   const [filter, setFilter] = useState<FilterState>({});
+  const [dateFilter, setDateFilter] = useState<DateFilterState>({});
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
 
   const handleNavigateToReports = () => {
@@ -122,21 +133,32 @@ export default function TeacherGrades() {
         const fetchedReports: Report[] = response.data;
         console.log('Received reports:', fetchedReports.length);
 
-        setReports(fetchedReports);
+        // Sort submissions by date (oldest first) for each report
+        const reportsWithSortedSubmissions = fetchedReports.map(report => ({
+          ...report,
+          submissions: report.submissions.sort((a, b) => 
+            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
+          )
+        }));
+
+        setReports(reportsWithSortedSubmissions);
 
         const initialPage: PageState = {};
         const initialRowsPerPage: RowsPerPageState = {};
         const initialFilter: FilterState = {};
+        const initialDateFilter: DateFilterState = {};
 
         fetchedReports.forEach((report) => {
           initialPage[report.schoolName] = 0;
           initialRowsPerPage[report.schoolName] = 5;
           initialFilter[report.schoolName] = '';
+          initialDateFilter[report.schoolName] = {};
         });
 
         setPage(initialPage);
         setRowsPerPage(initialRowsPerPage);
         setFilter(initialFilter);
+        setDateFilter(initialDateFilter);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching reports:', err);
@@ -159,8 +181,16 @@ export default function TeacherGrades() {
       
       const updatedReport = response.data.find((r: Report) => r.schoolName === schoolName);
       if (updatedReport) {
+        // Sort submissions by date (oldest first)
+        const sortedReport = {
+          ...updatedReport,
+          submissions: updatedReport.submissions.sort((a, b) => 
+            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
+          )
+        };
+        
         setReports((prev) =>
-          prev.map((r) => (r.schoolName === schoolName ? updatedReport : r))
+          prev.map((r) => (r.schoolName === schoolName ? sortedReport : r))
         );
       }
     } catch (err) {
@@ -181,6 +211,25 @@ export default function TeacherGrades() {
 
   const handleFilterChange = (schoolName: string, event: React.ChangeEvent<HTMLInputElement>) => {
     debouncedHandleFilterChange(schoolName, event.target.value);
+  };
+
+  const handleDateFilterChange = (schoolName: string, type: 'startDate' | 'endDate', date?: Date) => {
+    setDateFilter((prev) => ({
+      ...prev,
+      [schoolName]: {
+        ...prev[schoolName],
+        [type]: date
+      }
+    }));
+    setPage((prev) => ({ ...prev, [schoolName]: 0 }));
+  };
+
+  const clearDateFilter = (schoolName: string) => {
+    setDateFilter((prev) => ({
+      ...prev,
+      [schoolName]: {}
+    }));
+    setPage((prev) => ({ ...prev, [schoolName]: 0 }));
   };
 
   const handleSchoolSelect = (schoolName: string) => {
@@ -275,10 +324,18 @@ export default function TeacherGrades() {
   const currentPage = page[report.schoolName] || 0;
   const currentRowsPerPage = rowsPerPage[report.schoolName] || 5;
   const currentFilter = filter[report.schoolName] || '';
+  const currentDateFilter = dateFilter[report.schoolName] || {};
 
-  const filteredSubmissions = report.submissions.filter((submission) =>
-    submission.submissionName.toLowerCase().includes(currentFilter.toLowerCase())
-  );
+  // Filter submissions by name and date range
+  const filteredSubmissions = report.submissions.filter((submission) => {
+    const nameMatch = submission.submissionName.toLowerCase().includes(currentFilter.toLowerCase());
+    
+    const submissionDate = new Date(submission.dateSubmitted);
+    const startDateMatch = !currentDateFilter.startDate || submissionDate >= currentDateFilter.startDate;
+    const endDateMatch = !currentDateFilter.endDate || submissionDate <= currentDateFilter.endDate;
+    
+    return nameMatch && startDateMatch && endDateMatch;
+  });
 
   const paginatedSubmissions = filteredSubmissions.slice(
     currentPage * currentRowsPerPage,
@@ -311,19 +368,88 @@ export default function TeacherGrades() {
         <Typography variant="body1" gutterBottom>
           <strong>Last Updated:</strong> {new Date(report.updatedAt).toLocaleString()}
         </Typography>
-        <TextField
-          label="Filter by Submission Name"
-          variant="outlined"
-          value={currentFilter}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, e)}
-          sx={{ mb: 2, width: '300px' }}
-        />
+        
+        {/* Filters Section */}
+        <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            label="Filter by Submission Name"
+            variant="outlined"
+            value={currentFilter}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, e)}
+            sx={{ width: '300px' }}
+          />
+          
+          {/* Start Date Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outlined"
+                className={cn(
+                  "w-[200px] justify-start text-left font-normal",
+                  !currentDateFilter.startDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {currentDateFilter.startDate ? format(currentDateFilter.startDate, "PPP") : "Start Date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={currentDateFilter.startDate}
+                onSelect={(date) => handleDateFilterChange(report.schoolName, 'startDate', date)}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          
+          {/* End Date Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outlined"
+                className={cn(
+                  "w-[200px] justify-start text-left font-normal",
+                  !currentDateFilter.endDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {currentDateFilter.endDate ? format(currentDateFilter.endDate, "PPP") : "End Date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={currentDateFilter.endDate}
+                onSelect={(date) => handleDateFilterChange(report.schoolName, 'endDate', date)}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          
+          {/* Clear Date Filters Button */}
+          {(currentDateFilter.startDate || currentDateFilter.endDate) && (
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => clearDateFilter(report.schoolName)}
+            >
+              Clear Date Filters
+            </Button>
+          )}
+        </Box>
+        
         {report.errorMessage ? (
           <Typography color="error" gutterBottom>
             {report.errorMessage}
           </Typography>
         ) : (
           <>
+            <Typography variant="body2" gutterBottom sx={{ mb: 1 }}>
+              Showing {filteredSubmissions.length} submissions (sorted by oldest first)
+            </Typography>
             <TableContainer component={Paper} sx={{ mb: 2 }}>
               <Table>
                 <TableHead>
