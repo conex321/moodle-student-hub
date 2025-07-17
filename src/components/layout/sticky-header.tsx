@@ -26,7 +26,7 @@ export function StickyHeader({ className }: StickyHeaderProps) {
     <header 
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-2 px-4",
-        scrolled ? "bg-white/90 backdrop-blur-md shadow-md" : "bg-transparent",
+        scrolled ? "bg-white/90 backdrop-blur-md shadow-md" : "bg-white/80 backdrop-blur-sm shadow-sm",
         className
       )}
     >

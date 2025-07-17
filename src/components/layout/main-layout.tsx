@@ -40,10 +40,10 @@ export function MainLayout({ children, requiredRole }: MainLayoutProps) {
 
   return (
     <div className="flex h-screen">
-      <StickyHeader className="md:hidden" />
+      <StickyHeader />
       <Sidebar role={user.role} />
       
-      <main className="flex-1 overflow-y-auto bg-slate-50 pt-16 md:pt-0">
+      <main className="flex-1 overflow-y-auto bg-slate-50 pt-16 md:pt-16 md:ml-0">
         <div className="p-6 max-w-7xl mx-auto">
           {children}
         </div>

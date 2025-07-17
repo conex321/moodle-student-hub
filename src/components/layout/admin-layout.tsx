@@ -4,6 +4,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { StickyHeader } from "@/components/layout/sticky-header";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -84,7 +85,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="flex h-screen">
-      <aside className="bg-gray-900 text-white w-64 flex flex-col">
+      <StickyHeader />
+      <aside className="bg-gray-900 text-white w-64 flex flex-col pt-16">
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold">Moodle Hub Admin</h1>
           {isTestEnvironment && (
@@ -173,7 +175,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </aside>
       
-      <main className="flex-1 overflow-y-auto bg-gray-50">
+      <main className="flex-1 overflow-y-auto bg-gray-50 pt-16">
         <div className="p-6 max-w-7xl mx-auto">
           {isTestEnvironment && (
             <div className="mb-6 p-4 border border-amber-200 bg-amber-50 rounded-lg flex items-center">

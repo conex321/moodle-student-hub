@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { MoodleForm } from "@/components/auth/moodle-form";
+import { StickyHeader } from "@/components/layout/sticky-header";
 
 export default function MoodleConfig() {
   const { authState } = useAuth();
@@ -26,15 +27,18 @@ export default function MoodleConfig() {
   }
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-light">
-      <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-xl">
-        <h1 className="font-sans text-3xl font-medium mb-6 text-center">
-          Moodle Configuration
-        </h1>
-        <p className="text-gray-600 mb-4 text-center">
-          Please enter your Moodle credentials to sync your courses and grades.
-        </p>
-        <MoodleForm />
+    <div className="min-h-screen">
+      <StickyHeader />
+      <div className="min-h-screen flex items-center justify-center bg-gray-light pt-16">
+        <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-xl">
+          <h1 className="font-sans text-3xl font-medium mb-6 text-center">
+            Moodle Configuration
+          </h1>
+          <p className="text-gray-600 mb-4 text-center">
+            Please enter your Moodle credentials to sync your courses and grades.
+          </p>
+          <MoodleForm />
+        </div>
       </div>
     </div>
   );
