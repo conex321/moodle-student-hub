@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { MainLayout } from "@/components/layout/main-layout";
 import { useNavigate } from "react-router-dom";
@@ -56,7 +55,7 @@ type Report = {
 
 type PageState = { [key: string]: number };
 type RowsPerPageState = { [key: string]: number };
-type FilterState = { [key: string]: string };
+type FilterState = { [key: string]: { submissionName: string; courseId: string } };
 type DateFilterState = { [key: string]: { startDate?: Date; endDate?: Date } };
 
 export default function TeacherGrades() {
@@ -151,7 +150,7 @@ export default function TeacherGrades() {
         fetchedReports.forEach((report) => {
           initialPage[report.schoolName] = 0;
           initialRowsPerPage[report.schoolName] = 5;
-          initialFilter[report.schoolName] = '';
+          initialFilter[report.schoolName] = { submissionName: '', courseId: '' };
           initialDateFilter[report.schoolName] = {};
         });
 
@@ -170,8 +169,11 @@ export default function TeacherGrades() {
     fetchReports();
   }, []);
 
-  const debouncedHandleFilterChange = debounce((schoolName: string, value: string) => {
-    setFilter((prev) => ({ ...prev, [schoolName]: value }));
+  const debouncedHandleFilterChange = debounce((schoolName: string, field: 'submissionName' | 'courseId', value: string) => {
+    setFilter((prev) => ({
+      ...prev,
+      [schoolName]: { ...prev[schoolName], [field]: value }
+    }));
     setPage((prev) => ({ ...prev, [schoolName]: 0 }));
   }, 300);
 
@@ -209,8 +211,8 @@ export default function TeacherGrades() {
     setPage((prev) => ({ ...prev, [schoolName]: 0 }));
   };
 
-  const handleFilterChange = (schoolName: string, event: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedHandleFilterChange(schoolName, event.target.value);
+  const handleFilterChange = (schoolName: string, field: 'submissionName' | 'courseId', event: React.ChangeEvent<HTMLInputElement>) => {
+    debouncedHandleFilterChange(schoolName, field, event.target.value);
   };
 
   const handleDateFilterChange = (schoolName: string, type: 'startDate' | 'endDate', date?: Date) => {
@@ -323,18 +325,19 @@ export default function TeacherGrades() {
 
   const currentPage = page[report.schoolName] || 0;
   const currentRowsPerPage = rowsPerPage[report.schoolName] || 5;
-  const currentFilter = filter[report.schoolName] || '';
+  const currentFilter = filter[report.schoolName] || { submissionName: '', courseId: '' };
   const currentDateFilter = dateFilter[report.schoolName] || {};
 
-  // Filter submissions by name and date range
+  // Filter submissions by name, course ID, and date range
   const filteredSubmissions = report.submissions.filter((submission) => {
-    const nameMatch = submission.submissionName.toLowerCase().includes(currentFilter.toLowerCase());
+    const nameMatch = submission.submissionName.toLowerCase().includes(currentFilter.submissionName.toLowerCase());
+    const courseIdMatch = submission.courseId.toLowerCase().includes(currentFilter.courseId.toLowerCase());
     
     const submissionDate = new Date(submission.dateSubmitted);
     const startDateMatch = !currentDateFilter.startDate || submissionDate >= currentDateFilter.startDate;
     const endDateMatch = !currentDateFilter.endDate || submissionDate <= currentDateFilter.endDate;
     
-    return nameMatch && startDateMatch && endDateMatch;
+    return nameMatch && courseIdMatch && startDateMatch && endDateMatch;
   });
 
   const paginatedSubmissions = filteredSubmissions.slice(
@@ -374,8 +377,15 @@ export default function TeacherGrades() {
           <TextField
             label="Filter by Submission Name"
             variant="outlined"
-            value={currentFilter}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, e)}
+            value={currentFilter.submissionName}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, 'submissionName', e)}
+            sx={{ width: '300px' }}
+          />
+          <TextField
+            label="Filter by Course ID"
+            variant="outlined"
+            value={currentFilter.courseId}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, 'courseId', e)}
             sx={{ width: '300px' }}
           />
           
