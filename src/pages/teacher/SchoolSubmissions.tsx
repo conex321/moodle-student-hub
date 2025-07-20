@@ -1,8 +1,5 @@
 import React, { useState, ChangeEvent } from 'react';
 import { debounce } from 'lodash';
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -18,12 +15,6 @@ import {
   Box,
   TextField,
 } from '@mui/material';
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 type Submission = {
   courseId: string;
@@ -82,12 +73,17 @@ export default function SchoolSubmissions({ report, onBack, onRefresh }: SchoolS
     debouncedHandleFilterChange(schoolName, field, event.target.value);
   };
 
-  const handleDateFilterChange = (schoolName: string, type: 'startDate' | 'endDate', date?: Date) => {
+  const handleDateFilterChange = (schoolName: string, type: 'startDate' | 'endDate', event: React.ChangeEvent<HTMLInputElement>) => {
+    const dateValue = event.target.value ? new Date(event.target.value) : undefined;
+    // Ensure valid date
+    if (dateValue && isNaN(dateValue.getTime())) {
+      return; // Ignore invalid dates
+    }
     setDateFilter((prev) => ({
       ...prev,
       [schoolName]: {
         ...prev[schoolName],
-        [type]: date
+        [type]: dateValue
       }
     }));
     setPage((prev) => ({ ...prev, [schoolName]: 0 }));
@@ -104,7 +100,7 @@ export default function SchoolSubmissions({ report, onBack, onRefresh }: SchoolS
   const currentPage = page[report.schoolName] || 0;
   const currentRowsPerPage = rowsPerPage[report.schoolName] || 5;
   const currentFilter = filter[report.schoolName] || { submissionName: '', courseId: '' };
-  const currentDateFilter = dateFilter[report.schoolName] || {};
+ cinst currentDateFilter = dateFilter[report.schoolName] || {};
 
   // Filter submissions by name, course ID, and date range
   const filteredSubmissions = report.submissions.filter((submission) => {
@@ -166,57 +162,25 @@ export default function SchoolSubmissions({ report, onBack, onRefresh }: SchoolS
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, 'courseId', e)}
             sx={{ minWidth: '200px', maxWidth: '300px' }}
           />
+          <TextField
+            label="Start Date"
+            type="date"
+            variant="outlined"
+            value={currentDateFilter.startDate ? currentDateFilter.startDate.toISOString().split('T')[0] : ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDateFilterChange(report.schoolName, 'startDate', e)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: '200px', maxWidth: '300px' }}
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            variant="outlined"
+            value={currentDateFilter.endDate ? currentDateFilter.endDate.toISOString().split('T')[0] : ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDateFilterChange(report.schoolName, 'endDate', e)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: '200px', maxWidth: '300px' }}
+          />
         </Box>
-        
-        {/* Start Date Filter */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outlined"
-              className={cn(
-                "w-[200px] justify-start text-left font-normal",
-                !currentDateFilter.startDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {currentDateFilter.startDate ? format(currentDateFilter.startDate, "PPP") : "Start Date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={currentDateFilter.startDate}
-              onSelect={(date) => handleDateFilterChange(report.schoolName, 'startDate', date)}
-              initialFocus
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-        
-        {/* End Date Filter */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outlined"
-              className={cn(
-                "w-[200px] justify-start text-left font-normal",
-                !currentDateFilter.endDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {currentDateFilter.endDate ? format(currentDateFilter.endDate, "PPP") : "End Date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={currentDateFilter.endDate}
-              onSelect={(date) => handleDateFilterChange(report.schoolName, 'endDate', date)}
-              initialFocus
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
         
         {/* Clear Date Filters Button */}
         {(currentDateFilter.startDate || currentDateFilter.endDate) && (
