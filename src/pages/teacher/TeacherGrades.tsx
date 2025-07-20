@@ -247,7 +247,7 @@ export default function TeacherGrades() {
       {accessibleSchools.length === 0 ? (
         <Box m={2}>
           <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
-            Select a School
+            Select a Schooll123
           </Typography>
           <Typography color="error">No schools available</Typography>
         </Box>
