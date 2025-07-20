@@ -330,8 +330,8 @@ export default function TeacherGrades() {
 
   // Filter submissions by name, course ID, and date range
   const filteredSubmissions = report.submissions.filter((submission) => {
-    const nameMatch = submission.submissionName.toLowerCase().includes(currentFilter.submissionName.toLowerCase());
-    const courseIdMatch = submission.courseId.toLowerCase().includes(currentFilter.courseId.toLowerCase());
+    const nameMatch = submission.submissionName.toLowerCase().includes(currentFilter.submissionName.toLowerCase() || '');
+    const courseIdMatch = submission.courseId.toLowerCase().includes(currentFilter.courseId.toLowerCase() || '');
     
     const submissionDate = new Date(submission.dateSubmitted);
     const startDateMatch = !currentDateFilter.startDate || submissionDate >= currentDateFilter.startDate;
@@ -377,16 +377,16 @@ export default function TeacherGrades() {
           <TextField
             label="Filter by Submission Name"
             variant="outlined"
-            value={currentFilter.submissionName}
+            value={currentFilter.submissionName || ''}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, 'submissionName', e)}
-            sx={{ width: '300px' }}
+            sx={{ minWidth: '200px', maxWidth: '300px' }}
           />
           <TextField
             label="Filter by Course ID"
             variant="outlined"
-            value={currentFilter.courseId}
+            value={currentFilter.courseId || ''}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(report.schoolName, 'courseId', e)}
-            sx={{ width: '300px' }}
+            sx={{ minWidth: '200px', maxWidth: '300px' }}
           />
           
           {/* Start Date Filter */}
