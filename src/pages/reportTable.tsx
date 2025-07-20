@@ -253,15 +253,7 @@ export default function TeacherGrades() {
         </Box>
       ) : (
         <div>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleNavigateToReports}
-            className="mt-4"
-          >
-            View Student Reports
-          </Button>
-          <h1 className="text-3xl font-bold mb-6">Grade Management</h1>
+          
           
           <Box className="mx-4 my-8 max-w-2xl mx-auto">
             <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
