@@ -79,6 +79,7 @@ export default function TeacherGrades() {
     if (!authState.user?.id || !authState.isAuthenticated) {
       console.log('No authenticated user, skipping profile fetch');
       setAccessibleSchools([]);
+      setLoading(false);
       return;
     }
 
@@ -95,12 +96,15 @@ export default function TeacherGrades() {
       if (error) {
         console.error('Supabase error:', error);
         setAccessibleSchools([]);
+        setError('Failed to fetch user profile');
+        setLoading(false);
         return;
       }
 
       if (!profiles || profiles.length === 0) {
         console.log('No profile found for user ID:', authState.user.id);
         setAccessibleSchools([]);
+        setLoading(false);
         return;
       }
 
@@ -108,9 +112,12 @@ export default function TeacherGrades() {
       const schools = profile?.accessible_schools || [];
       setAccessibleSchools(schools);
       console.log('Teacher accessible schools:', schools);
+      setLoading(false);
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
       setAccessibleSchools([]);
+      setError('Unexpected error fetching profile');
+      setLoading(false);
     }
   };
 
@@ -119,6 +126,7 @@ export default function TeacherGrades() {
       fetchUserProfile();
     } else {
       setAccessibleSchools([]);
+      setLoading(false);
     }
   }, [authState.user?.id, authState.isAuthenticated]);
 
@@ -265,41 +273,58 @@ export default function TeacherGrades() {
   if (!selectedSchool) {
     return (
       <MainLayout requiredRole="teacher">
-        <div>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleNavigateToReports}
-            className="mt-4"
-          >
-            View Student Reports
-          </Button>
-          <h1 className="text-3xl font-bold mb-6">Grade Management</h1>
-          
-          <Box className="mx-4 my-8 max-w-2xl mx-auto">
+        {accessibleSchools.length === 0 && !loading ? (
+          <Box m={2}>
             <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
               Select a School
             </Typography>
-            <Typography variant="body2" className="text-gray-600 mb-4">
-              Available schools: {reports.length}
-            </Typography>
-            <List className="bg-white shadow-lg rounded-lg">
-              {reports.map((report) => (
-                <ListItem key={report.schoolName} className="border-b last:border-b-0">
-                  <ListItemButton
-                    onClick={() => handleSchoolSelect(report.schoolName)}
-                    className="hover:bg-blue-50 transition-colors duration-200 py-4"
-                  >
-                    <ListItemText
-                      primary={report.schoolName}
-                      className="text-lg font-medium text-gray-700"
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
+            <Typography color="error">No schools available</Typography>
           </Box>
-        </div>
+        ) : (
+          <div>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleNavigateToReports}
+              className="mt-4"
+            >
+              View Student Reports
+            </Button>
+            <h1 className="text-3xl font-bold mb-6">Grade Management</h1>
+            
+            <Box className="mx-4 my-8 max-w-2xl mx-auto">
+              <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
+                Select a School
+              </Typography>
+              {accessibleSchools.length > 0 ? (
+                <>
+                  <Typography variant="body2" className="text-gray-600 mb-4">
+                    Available schools: {accessibleSchools.length}
+                  </Typography>
+                  <List className="bg-white shadow-lg rounded-lg">
+                    {accessibleSchools.map((schoolName) => (
+                      <ListItem key={schoolName} className="border-b last:border-b-0">
+                        <ListItemButton
+                          onClick={() => handleSchoolSelect(schoolName)}
+                          className="hover:bg-blue-50 transition-colors duration-200 py-4"
+                        >
+                          <ListItemText
+                            primary={schoolName}
+                            className="text-lg font-medium text-gray-700"
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </>
+              ) : (
+                <Box display="flex" justifyContent="center" alignItems="center">
+                  <CircularProgress />
+                </Box>
+              )}
+            </Box>
+          </div>
+        )}
       </MainLayout>
     );
   }
