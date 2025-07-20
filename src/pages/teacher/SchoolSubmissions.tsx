@@ -100,7 +100,7 @@ export default function SchoolSubmissions({ report, onBack, onRefresh }: SchoolS
   const currentPage = page[report.schoolName] || 0;
   const currentRowsPerPage = rowsPerPage[report.schoolName] || 5;
   const currentFilter = filter[report.schoolName] || { submissionName: '', courseId: '' };
- cinst currentDateFilter = dateFilter[report.schoolName] || {};
+ const currentDateFilter = dateFilter[report.schoolName] || {};
 
   // Filter submissions by name, course ID, and date range
   const filteredSubmissions = report.submissions.filter((submission) => {
