@@ -265,7 +265,7 @@ export default function TeacherGrades() {
           
           <Box className="mx-4 my-8 max-w-2xl mx-auto">
             <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
-              Select a School
+              Select a School22
             </Typography>
             <Typography variant="body2" className="text-gray-600 mb-4">
               Available schools: {accessibleSchools.length}
