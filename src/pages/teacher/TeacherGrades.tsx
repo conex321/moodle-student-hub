@@ -7,13 +7,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   Box,
   Button,
+  CircularProgress,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
   Typography,
 } from '@mui/material';
-import { Skeleton } from "@/components/ui/skeleton";
 import SchoolSubmissions from './SchoolSubmissions';
 
 type Submission = {
@@ -40,6 +40,7 @@ export default function TeacherGrades() {
   const [reports, setReports] = useState<Report[]>([]);
   const [accessibleSchools, setAccessibleSchools] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [submissionsLoading, setSubmissionsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
 
@@ -133,26 +134,52 @@ export default function TeacherGrades() {
   }, []);
 
   const handleSchoolSelect = (schoolName: string) => {
+    setSubmissionsLoading(true);
     setSelectedSchool(schoolName);
+    // Simulate loading delay for SchoolSubmissions
+    setTimeout(() => {
+      setSubmissionsLoading(false);
+    }, 300);
   };
 
   const handleBackToList = () => {
     setSelectedSchool(null);
+    setSubmissionsLoading(false);
   };
+
+  async function fetchSchoolReport(schoolName: string) {
+    try {
+      setSubmissionsLoading(true);
+      const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
+      
+      const updatedReport = response.data.find((r: Report) => r.schoolName === schoolName);
+      if (updatedReport) {
+        // Sort submissions by date (oldest first)
+        const sortedReport = {
+          ...updatedReport,
+          submissions: updatedReport.submissions.sort((a, b) => 
+            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
+          )
+        };
+        
+        setReports((prev) =>
+          prev.map((r) => (r.schoolName === schoolName ? sortedReport : r))
+        );
+      }
+    } catch (err) {
+      console.error('Error refreshing report:', err);
+      setError(`Failed to refresh report for ${schoolName}`);
+    } finally {
+      setSubmissionsLoading(false);
+    }
+  }
 
   if (loading) {
     return (
       <MainLayout requiredRole="teacher">
-        <div className="p-6 max-w-2xl mx-auto">
-          <Skeleton className="h-8 w-64 mb-6" />
-          <Skeleton className="h-4 w-32 mb-4" />
-          <div className="bg-white shadow-lg rounded-lg p-4">
-            <Skeleton className="h-12 mb-2" />
-            <Skeleton className="h-12 mb-2" />
-            <Skeleton className="h-12 mb-2" />
-            <Skeleton className="h-12" />
-          </div>
-        </div>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+          <CircularProgress />
+        </Box>
       </MainLayout>
     );
   }
@@ -188,11 +215,17 @@ export default function TeacherGrades() {
     }
     return (
       <MainLayout requiredRole="teacher">
-        <SchoolSubmissions
-          report={report}
-          onBack={handleBackToList}
-          onRefresh={() => fetchSchoolReport(selectedSchool)}
-        />
+        {submissionsLoading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+            <CircularProgress />
+          </Box>
+        ) : (
+          <SchoolSubmissions
+            report={report}
+            onBack={handleBackToList}
+            onRefresh={() => fetchSchoolReport(selectedSchool)}
+          />
+        )}
       </MainLayout>
     );
   }
@@ -245,28 +278,4 @@ export default function TeacherGrades() {
       )}
     </MainLayout>
   );
-
-  async function fetchSchoolReport(schoolName: string) {
-    try {
-      const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
-      
-      const updatedReport = response.data.find((r: Report) => r.schoolName === schoolName);
-      if (updatedReport) {
-        // Sort submissions by date (oldest first)
-        const sortedReport = {
-          ...updatedReport,
-          submissions: updatedReport.submissions.sort((a, b) => 
-            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
-          )
-        };
-        
-        setReports((prev) =>
-          prev.map((r) => (r.schoolName === schoolName ? sortedReport : r))
-        );
-      }
-    } catch (err) {
-      console.error('Error refreshing report:', err);
-      setError(`Failed to refresh report for ${schoolName}`);
-    }
-  }
 }
