@@ -134,24 +134,23 @@ export default function TeacherGrades() {
   }, []);
 
   const handleSchoolSelect = (schoolName: string) => {
-    setSubmissionsLoading(true);
+    console.log('Selecting school:', schoolName);
     setSelectedSchool(schoolName);
-    // Simulate loading delay for SchoolSubmissions
-    setTimeout(() => {
-      setSubmissionsLoading(false);
-    }, 300);
   };
 
   const handleBackToList = () => {
+    console.log('Returning to school list, resetting submissionsLoading');
     setSelectedSchool(null);
     setSubmissionsLoading(false);
   };
 
   async function fetchSchoolReport(schoolName: string) {
     try {
+      console.log('Starting report refresh for:', schoolName, 'Setting submissionsLoading to true');
       setSubmissionsLoading(true);
       const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
       
+      console.log('Received API response for:', schoolName);
       const updatedReport = response.data.find((r: Report) => r.schoolName === schoolName);
       if (updatedReport) {
         // Sort submissions by date (oldest first)
@@ -165,26 +164,31 @@ export default function TeacherGrades() {
         setReports((prev) =>
           prev.map((r) => (r.schoolName === schoolName ? sortedReport : r))
         );
+      } else {
+        console.log('No updated report found for:', schoolName);
       }
     } catch (err) {
       console.error('Error refreshing report:', err);
       setError(`Failed to refresh report for ${schoolName}`);
     } finally {
+      console.log('Ending submissionsLoading for:', schoolName);
       setSubmissionsLoading(false);
     }
   }
 
   if (loading) {
+    console.log('Main loading state active');
     return (
       <MainLayout requiredRole="teacher">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-          <CircularProgress />
+          <CircularProgress size={60} thickness={4} />
         </Box>
       </MainLayout>
     );
   }
 
   if (error) {
+    console.log('Error state:', error);
     return (
       <MainLayout requiredRole="teacher">
         <Box m={2}>
@@ -197,6 +201,7 @@ export default function TeacherGrades() {
   if (selectedSchool) {
     const report = reports.find((r) => r.schoolName === selectedSchool);
     if (!report) {
+      console.log('No report found for:', selectedSchool);
       return (
         <MainLayout requiredRole="teacher">
           <Box m={2}>
@@ -216,8 +221,14 @@ export default function TeacherGrades() {
     return (
       <MainLayout requiredRole="teacher">
         {submissionsLoading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-            <CircularProgress />
+          <Box 
+            display="flex" 
+            justifyContent="center" 
+            alignItems="center" 
+            minHeight="100vh"
+            sx={{ backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
+          >
+            <CircularProgress size={60} thickness={4} />
           </Box>
         ) : (
           <SchoolSubmissions
@@ -230,6 +241,7 @@ export default function TeacherGrades() {
     );
   }
 
+  console.log('Rendering school selection, accessibleSchools:', accessibleSchools);
   return (
     <MainLayout requiredRole="teacher">
       {accessibleSchools.length === 0 ? (
