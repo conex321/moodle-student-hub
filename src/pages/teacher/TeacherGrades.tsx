@@ -247,25 +247,16 @@ export default function TeacherGrades() {
       {accessibleSchools.length === 0 ? (
         <Box m={2}>
           <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
-            Select a Schooll123
+            Select a School
           </Typography>
           <Typography color="error">No schools available</Typography>
         </Box>
       ) : (
         <div>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleNavigateToReports}
-            className="mt-4"
-          >
-            View Student Reports
-          </Button>
-          <h1 className="text-3xl font-bold mb-6">Grade Management</h1>
-          
+        
           <Box className="mx-4 my-8 max-w-2xl mx-auto">
             <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
-              Select a School22
+              Select a School
             </Typography>
             <Typography variant="body2" className="text-gray-600 mb-4">
               Available schools: {accessibleSchools.length}
