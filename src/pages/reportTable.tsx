@@ -14,7 +14,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import SchoolSubmissions from './SchoolSubmissions';
+import SchoolSubmissions from './teacher/SchoolSubmissions';
 
 type Submission = {
   courseId: string;
