@@ -100,19 +100,21 @@ export default function SchoolSubmissions({ report, onBack, onRefresh }: SchoolS
   const currentPage = page[report.schoolName] || 0;
   const currentRowsPerPage = rowsPerPage[report.schoolName] || 5;
   const currentFilter = filter[report.schoolName] || { submissionName: '', courseId: '' };
- const currentDateFilter = dateFilter[report.schoolName] || {};
+  const currentDateFilter = dateFilter[report.schoolName] || {};
 
   // Filter submissions by name, course ID, and date range
-  const filteredSubmissions = report.submissions.filter((submission) => {
-    const nameMatch = submission.submissionName.toLowerCase().includes(currentFilter.submissionName.toLowerCase() || '');
-    const courseIdMatch = submission.courseId.toLowerCase().includes(currentFilter.courseId.toLowerCase() || '');
-    
-    const submissionDate = new Date(submission.dateSubmitted);
-    const startDateMatch = !currentDateFilter.startDate || submissionDate >= currentDateFilter.startDate;
-    const endDateMatch = !currentDateFilter.endDate || submissionDate <= currentDateFilter.endDate;
-    
-    return nameMatch && courseIdMatch && startDateMatch && endDateMatch;
-  });
+  const filteredSubmissions = report.submissions
+    .filter((submission) => {
+      const nameMatch = submission.submissionName.toLowerCase().includes(currentFilter.submissionName.toLowerCase() || '');
+      const courseIdMatch = submission.courseId.toLowerCase().includes(currentFilter.courseId.toLowerCase() || '');
+      
+      const submissionDate = new Date(submission.dateSubmitted);
+      const startDateMatch = !currentDateFilter.startDate || submissionDate >= currentDateFilter.startDate;
+      const endDateMatch = !currentDateFilter.endDate || submissionDate <= currentDateFilter.endDate;
+      
+      return nameMatch && courseIdMatch && startDateMatch && endDateMatch;
+    })
+    .sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
 
   const paginatedSubmissions = filteredSubmissions.slice(
     currentPage * currentRowsPerPage,
@@ -201,7 +203,7 @@ export default function SchoolSubmissions({ report, onBack, onRefresh }: SchoolS
       ) : (
         <>
           <Typography variant="body2" gutterBottom sx={{ mb: 1 }}>
-            Showing {filteredSubmissions.length} submissions (sorted by oldest first)
+            Showing {filteredSubmissions.length} submissions (sorted by newest first)
           </Typography>
           <TableContainer component={Paper} sx={{ mb: 2 }}>
             <Table>
