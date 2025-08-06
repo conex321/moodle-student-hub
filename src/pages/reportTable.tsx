@@ -14,7 +14,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import SchoolSubmissions from './teacher/SchoolSubmissions';
+import SchoolSubmissions from './SchoolSubmissions';
 
 type Submission = {
   courseId: string;
@@ -205,7 +205,8 @@ export default function TeacherGrades() {
       return (
         <MainLayout requiredRole="teacher">
           <Box m={2}>
-            <Typography color="error">Report not found</Typography>
+            <CircularProgress size={60} thickness={4} />
+              
             <Button
               variant="outlined"
               color="primary"
@@ -253,8 +254,7 @@ export default function TeacherGrades() {
         </Box>
       ) : (
         <div>
-          
-          
+        
           <Box className="mx-4 my-8 max-w-2xl mx-auto">
             <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
               Select a School
