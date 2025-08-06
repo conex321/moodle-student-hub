@@ -205,7 +205,10 @@ export default function TeacherGrades() {
       return (
         <MainLayout requiredRole="teacher">
           <Box m={2}>
-            <Typography color="error">Report not found</Typography>
+            <Typography color="error">
+            <CircularProgress size={60} thickness={4} />
+              
+            </Typography>
             <Button
               variant="outlined"
               color="primary"
