@@ -21,7 +21,7 @@ export function PasswordInput({
   autoComplete = "current-password"
 }: PasswordInputProps) {
   return (
-    <div className="w-full space-y-2">
+    <div className="w-full space-y-2 relative">
       <InputWithLabel
         label="Password"
         type={showPassword ? "text" : "password"}
@@ -29,13 +29,13 @@ export function PasswordInput({
         onChange={(e) => setPassword(e.target.value)}
         required
         autoComplete={autoComplete}
-        containerClassName="space-y-2 relative"
+        containerClassName="space-y-2"
         className="h-12 rounded-lg shadow-sm border-gray-200 pr-10 focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
       />
       <button
         type="button"
         onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700"
+        className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700 transition-colors"
         tabIndex={-1}
       >
         {showPassword ? (
