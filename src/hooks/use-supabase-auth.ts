@@ -115,41 +115,55 @@ export function useSupabaseAuth() {
 
     // Set up the auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         
         if (!isMounted) return;
         
         if (session && session.user) {
-          // User is authenticated, get profile details
-          try {
-            const { data: profiles } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id);
+          // Set loading state immediately
+          setAuthState(prev => ({
+            ...prev,
+            isLoading: true,
+          }));
 
-            const profile = profiles && profiles.length > 0 ? profiles[0] : null;
+          // Defer profile fetching to avoid deadlock
+          setTimeout(async () => {
+            if (!isMounted) return;
+            
+            try {
+              const { data: profiles } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id);
 
-            const user: User = {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: profile?.full_name || session.user.email?.split('@')[0] || 'User',
-              role: (profile?.role as UserRole) || intendedRole,
-            };
+              if (!isMounted) return;
 
-            setAuthState({
-              user,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-          } catch (error) {
-            console.error("Error fetching profile:", error);
-            setAuthState({
-              user: null,
-              isAuthenticated: false,
-              isLoading: false,
-            });
-          }
+              const profile = profiles && profiles.length > 0 ? profiles[0] : null;
+
+              const user: User = {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: profile?.full_name || session.user.email?.split('@')[0] || 'User',
+                role: (profile?.role as UserRole) || intendedRole,
+              };
+
+              setAuthState({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+            } catch (error) {
+              console.error("Error fetching profile:", error);
+              if (!isMounted) return;
+              
+              setAuthState({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+              });
+            }
+          }, 0);
         } else {
           // No active session
           console.log("No active session");
