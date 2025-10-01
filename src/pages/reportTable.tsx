@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from "@/components/layout/main-layout";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
@@ -44,119 +44,74 @@ export default function TeacherGrades() {
   const [error, setError] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
 
-  const handleNavigateToReports = () => {
-    navigate("/teacher/reports");
-  };
-
-  const fetchUserProfile = async () => {
+  // Memoize fetchUserProfile to prevent unnecessary re-renders
+  const fetchUserProfile = useCallback(async () => {
     if (!authState.user?.id || !authState.isAuthenticated) {
-      console.log('No authenticated user, skipping profile fetch');
       setAccessibleSchools([]);
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Fetching profile for user ID:', authState.user.id);
-
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('accessible_schools')
-        .eq('id', authState.user.id);
-
-      console.log('Supabase profiles response:', { profiles, error });
+        .eq('id', authState.user.id)
+        .single(); // Use single() to get one record
 
       if (error) {
         console.error('Supabase error:', error);
-        setAccessibleSchools([]);
         setError('Failed to fetch user profile');
-        setLoading(false);
-        return;
-      }
-
-      if (!profiles || profiles.length === 0) {
-        console.log('No profile found for user ID:', authState.user.id);
         setAccessibleSchools([]);
-        setLoading(false);
         return;
       }
 
-      const profile = profiles[0];
-      const schools = profile?.accessible_schools || [];
+      const schools = profiles?.accessible_schools || [];
       setAccessibleSchools(schools);
-      console.log('Teacher accessible schools:', schools);
-      setLoading(false);
     } catch (error) {
       console.error('Unexpected error fetching profile:', error);
-      setAccessibleSchools([]);
       setError('Unexpected error fetching profile');
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (authState.isAuthenticated && authState.user?.id) {
-      fetchUserProfile();
-    } else {
       setAccessibleSchools([]);
+    } finally {
       setLoading(false);
     }
   }, [authState.user?.id, authState.isAuthenticated]);
 
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        console.log('Fetching all reports from endpoint');
-        
-        const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
-        
-        const fetchedReports: Report[] = response.data;
-        console.log('Received reports:', fetchedReports.length);
+  // Memoize fetchReports to prevent unnecessary re-renders
+  const fetchReports = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
+      
+      const fetchedReports: Report[] = response.data;
+      // Sort submissions by date (oldest first) for each report
+      const reportsWithSortedSubmissions = fetchedReports.map(report => ({
+        ...report,
+        submissions: report.submissions.sort((a: Submission, b: Submission) => 
+          new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
+        )
+      }));
 
-        // Sort submissions by date (oldest first) for each report
-        const reportsWithSortedSubmissions = fetchedReports.map(report => ({
-          ...report,
-          submissions: report.submissions.sort((a, b) => 
-            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
-          )
-        }));
-
-        setReports(reportsWithSortedSubmissions);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching reports:', err);
-        setError('Failed to fetch reports');
-        setLoading(false);
-      }
-    };
-
-    fetchReports();
+      setReports(reportsWithSortedSubmissions);
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+      setError('Failed to fetch reports');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleSchoolSelect = (schoolName: string) => {
-    console.log('Selecting school:', schoolName);
-    setSelectedSchool(schoolName);
-  };
-
-  const handleBackToList = () => {
-    console.log('Returning to school list, resetting submissionsLoading');
-    setSelectedSchool(null);
-    setSubmissionsLoading(false);
-  };
-
-  async function fetchSchoolReport(schoolName: string) {
+  // Memoize fetchSchoolReport
+  const fetchSchoolReport = useCallback(async (schoolName: string) => {
     try {
-      console.log('Starting report refresh for:', schoolName, 'Setting submissionsLoading to true');
       setSubmissionsLoading(true);
       const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
       
-      console.log('Received API response for:', schoolName);
       const updatedReport = response.data.find((r: Report) => r.schoolName === schoolName);
       if (updatedReport) {
-        // Sort submissions by date (oldest first)
         const sortedReport = {
           ...updatedReport,
-          submissions: updatedReport.submissions.sort((a, b) => 
+          submissions: updatedReport.submissions.sort((a: Submission, b: Submission) => 
             new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
           )
         };
@@ -164,20 +119,37 @@ export default function TeacherGrades() {
         setReports((prev) =>
           prev.map((r) => (r.schoolName === schoolName ? sortedReport : r))
         );
-      } else {
-        console.log('No updated report found for:', schoolName);
       }
     } catch (err) {
       console.error('Error refreshing report:', err);
       setError(`Failed to refresh report for ${schoolName}`);
     } finally {
-      console.log('Ending submissionsLoading for:', schoolName);
       setSubmissionsLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  const handleSchoolSelect = (schoolName: string) => {
+    setSelectedSchool(schoolName);
+  };
+
+  const handleBackToList = () => {
+    setSelectedSchool(null);
+    setSubmissionsLoading(false);
+  };
+
+  const handleNavigateToReports = () => {
+    navigate("/teacher/reports");
+  };
 
   if (loading) {
-    console.log('Main loading state active');
     return (
       <MainLayout requiredRole="teacher">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -188,11 +160,22 @@ export default function TeacherGrades() {
   }
 
   if (error) {
-    console.log('Error state:', error);
     return (
       <MainLayout requiredRole="teacher">
         <Box m={2}>
           <Typography color="error">{error}</Typography>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => {
+              setError(null);
+              fetchUserProfile();
+              fetchReports();
+            }}
+            sx={{ mt: 2 }}
+          >
+            Retry
+          </Button>
         </Box>
       </MainLayout>
     );
@@ -200,65 +183,42 @@ export default function TeacherGrades() {
 
   if (selectedSchool) {
     const report = reports.find((r) => r.schoolName === selectedSchool);
-    if (!report) {
-      console.log('No report found for:', selectedSchool);
-      return (
-        <MainLayout requiredRole="teacher">
-          <Box m={2}>
-            <CircularProgress size={60} thickness={4} />
-              
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleBackToList}
-              sx={{ mt: 2 }}
-            >
-              Back to School List
-            </Button>
-          </Box>
-        </MainLayout>
-      );
-    }
     return (
       <MainLayout requiredRole="teacher">
-        {submissionsLoading ? (
+        <SchoolSubmissions
+          report={report}
+          onBack={handleBackToList}
+          onRefresh={() => fetchSchoolReport(selectedSchool)}
+        />
+        {submissionsLoading && (
           <Box 
             display="flex" 
             justifyContent="center" 
             alignItems="center" 
-            minHeight="100vh"
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
             sx={{ backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
           >
             <CircularProgress size={60} thickness={4} />
           </Box>
-        ) : (
-          <SchoolSubmissions
-            report={report}
-            onBack={handleBackToList}
-            onRefresh={() => fetchSchoolReport(selectedSchool)}
-          />
         )}
       </MainLayout>
     );
   }
 
-  console.log('Rendering school selection, accessibleSchools:', accessibleSchools);
   return (
     <MainLayout requiredRole="teacher">
-      {accessibleSchools.length === 0 ? (
-        <Box m={2}>
-          <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
-            Select a School
-          </Typography>
+      <Box className="mx-4 my-8 max-w-2xl mx-auto">
+        <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
+          Select a School
+        </Typography>
+        {accessibleSchools.length === 0 ? (
           <Typography color="error">No schools available</Typography>
-        </Box>
-      ) : (
-        <div>
-        
-          <Box className="mx-4 my-8 max-w-2xl mx-auto">
-            <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
-              Select a School
-            </Typography>
+        ) : (
+          <>
             <Typography variant="body2" className="text-gray-600 mb-4">
               Available schools: {accessibleSchools.length}
             </Typography>
@@ -277,9 +237,9 @@ export default function TeacherGrades() {
                 </ListItem>
               ))}
             </List>
-          </Box>
-        </div>
-      )}
+          </>
+        )}
+      </Box>
     </MainLayout>
   );
 }
