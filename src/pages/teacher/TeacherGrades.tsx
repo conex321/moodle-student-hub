@@ -44,11 +44,6 @@ export default function TeacherGrades() {
   const [submissionsLoading, setSubmissionsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
-  
-  // Only show the school list when all accessible schools have corresponding reports
-  const reportsReady = accessibleSchools.length === 0
-    ? true
-    : accessibleSchools.every((school) => reports.some((r) => r && r.schoolName === school));
 
   const handleNavigateToReports = () => {
     navigate("/teacher/reports");
@@ -194,8 +189,8 @@ export default function TeacherGrades() {
     }
   }
 
-  if (loading || reportsLoading || !reportsReady) {
-    console.log('Main loading state active (profile, reports, or reports not ready)');
+  if (loading || reportsLoading) {
+    console.log('Main loading state active (waiting for profile and reports)');
     return (
       <MainLayout requiredRole="teacher">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
