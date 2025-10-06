@@ -157,19 +157,20 @@ useEffect(() => {
 
 
   const handleSchoolSelect = (schoolName: string) => {
-    // Only allow selection if reports loaded successfully
-    console.log("schoolName: ",schoolName)
-    console.log("respotes: ", reports)
-    if (!reports) {
-      console.log('Cannot select school - reports not loaded successfully');
+    // Block selection until reports have successfully loaded (status 200)
+    if (!reportsLoadSuccess || reportsLoading) {
+      console.log('Cannot select school - reports not loaded successfully yet');
       return;
-    }else{
+    }
+
     console.log('Selecting school:', schoolName);
-    // setSubmissionsLoading(true);
-    // setSelectedSchool(schoolName);
-    // // Reset loading after a short delay to show the data
-    // setTimeout(() => setSubmissionsLoading(false), 100);
-  }
+    const match = reports.find((r) => r && r.schoolName === schoolName);
+    if (!match) {
+      console.log('No matching report found for selected school:', schoolName);
+      return;
+    }
+
+    setSelectedSchool(schoolName);
   };
 
   const handleBackToList = () => {
@@ -234,7 +235,7 @@ useEffect(() => {
   }
 
   if (selectedSchool) {
-    const report = reports.find((r) => r.schoolName === selectedSchool);
+    const report = reports.find((r) => r && r.schoolName === selectedSchool);
     if (!report) {
       console.log('No report found for:', selectedSchool);
       return (
@@ -300,8 +301,8 @@ useEffect(() => {
                 {accessibleSchools.map((schoolName) => (
                   <ListItem key={schoolName} className="border-b last:border-b-0">
                     <ListItemButton
-                      onClick={() => handleSchoolSelect(schoolName)}
-                      disabled={!reportsLoadSuccess}
+                      onClick={reportsLoadSuccess ? () => handleSchoolSelect(schoolName) : undefined}
+                      disabled={!reportsLoadSuccess || reportsLoading}
                       className="hover:bg-blue-50 transition-colors duration-200 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ListItemText
