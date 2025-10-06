@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useReports } from "@/contexts/ReportsContext";
 import {
   Box,
   Button,
@@ -37,11 +38,9 @@ type Report = {
 export default function TeacherGrades() {
   const navigate = useNavigate();
   const { authState } = useAuth();
-  const [reports, setReports] = useState<Report[]>([]);
+  const { reports, loading: reportsLoading, error: reportsError, loadSuccess: reportsLoadSuccess, refreshReports } = useReports();
   const [accessibleSchools, setAccessibleSchools] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [reportsLoading, setReportsLoading] = useState<boolean>(true);
-  const [reportsLoadSuccess, setReportsLoadSuccess] = useState<boolean>(false);
   const [submissionsLoading, setSubmissionsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
@@ -105,55 +104,12 @@ export default function TeacherGrades() {
     }
   }, [authState.user?.id, authState.isAuthenticated]);
 
-useEffect(() => {
-  const fetchReports = async () => {
-    try {
-      console.log('Fetching all reports from endpoint');
-      setReportsLoading(true);
-      setReportsLoadSuccess(false);
-
-
-      const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
-
-      if (response.status === 200) {
-        const fetchedReports: Report[] = response.data;
-        console.log('Received reports with status 200:', fetchedReports.length);
-
-        const validReports = (fetchedReports || []).filter(
-          (report): report is Report =>
-            report != null &&
-            typeof report === 'object' &&
-            'schoolName' in report &&
-            'submissions' in report
-        );
-
-        const reportsWithSortedSubmissions = validReports.map(report => ({
-          ...report,
-          submissions: (report.submissions || []).sort(
-            (a, b) =>
-              new Date(a.dateSubmitted).getTime() -
-              new Date(b.dateSubmitted).getTime()
-          ),
-        }));
-
-        setReports(reportsWithSortedSubmissions);
-        setReportsLoadSuccess(true);
-      } else {
-        console.error('Reports request returned non-200 status:', response.status);
-        setError(`Failed to load reports (Status: ${response.status})`);
-        setReportsLoadSuccess(false);
-      }
-    } catch (err) {
-      console.error('Error fetching reports:', err);
-      setError('Failed to fetch reports. Please try again later.');
-      setReportsLoadSuccess(false);
-    } finally {
-      setReportsLoading(false);
+  // Set error from reports context if available
+  useEffect(() => {
+    if (reportsError) {
+      setError(reportsError);
     }
-  };
-
-  fetchReports();
-}, []);
+  }, [reportsError]);
 
 
   const handleSchoolSelect = (schoolName: string) => {
@@ -181,28 +137,10 @@ useEffect(() => {
 
   async function fetchSchoolReport(schoolName: string) {
     try {
-      console.log('Starting report refresh for:', schoolName, 'Setting submissionsLoading to true');
+      console.log('Starting report refresh for:', schoolName);
       setSubmissionsLoading(true);
-      const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
-      
-      console.log('Received API response for:', schoolName);
-      const allReports = response.data || [];
-      const updatedReport = allReports.find((r: Report) => r && r.schoolName === schoolName);
-      if (updatedReport) {
-        // Sort submissions by date (oldest first)
-        const sortedReport = {
-          ...updatedReport,
-          submissions: (updatedReport.submissions || []).sort((a, b) => 
-            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
-          )
-        };
-        
-        setReports((prev) =>
-          prev.map((r) => (r && r.schoolName === schoolName ? sortedReport : r))
-        );
-      } else {
-        console.log('No updated report found for:', schoolName);
-      }
+      await refreshReports();
+      console.log('Report refresh completed for:', schoolName);
     } catch (err) {
       console.error('Error refreshing report:', err);
       setError(`Failed to refresh report for ${schoolName}`);
