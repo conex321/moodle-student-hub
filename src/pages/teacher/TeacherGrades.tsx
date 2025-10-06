@@ -41,6 +41,7 @@ export default function TeacherGrades() {
   const [accessibleSchools, setAccessibleSchools] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [reportsLoading, setReportsLoading] = useState<boolean>(true);
+  const [reportsLoadSuccess, setReportsLoadSuccess] = useState<boolean>(false);
   const [submissionsLoading, setSubmissionsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
@@ -109,32 +110,43 @@ export default function TeacherGrades() {
       try {
         console.log('Fetching all reports from endpoint');
         setReportsLoading(true);
+        setReportsLoadSuccess(false);
         
         const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
         
-        const fetchedReports: Report[] = response.data;
-        console.log('Received reports:', fetchedReports.length);
+        // Only proceed if status is 200
+        if (response.status === 200) {
+          const fetchedReports: Report[] = response.data;
+          console.log('Received reports with status 200:', fetchedReports.length);
 
-        // Filter out any null/undefined reports and sort submissions by date (oldest first)
-        const validReports = (fetchedReports || []).filter((report): report is Report => 
-          report != null && 
-          typeof report === 'object' && 
-          'schoolName' in report &&
-          'submissions' in report
-        );
-        
-        const reportsWithSortedSubmissions = validReports.map(report => ({
-          ...report,
-          submissions: (report.submissions || []).sort((a, b) => 
-            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
-          )
-        }));
+          // Filter out any null/undefined reports and sort submissions by date (oldest first)
+          const validReports = (fetchedReports || []).filter((report): report is Report => 
+            report != null && 
+            typeof report === 'object' && 
+            'schoolName' in report &&
+            'submissions' in report
+          );
+          
+          const reportsWithSortedSubmissions = validReports.map(report => ({
+            ...report,
+            submissions: (report.submissions || []).sort((a, b) => 
+              new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
+            )
+          }));
 
-        setReports(reportsWithSortedSubmissions);
-        setReportsLoading(false);
+          setReports(reportsWithSortedSubmissions);
+          setReportsLoadSuccess(true);
+          setReportsLoading(false);
+        } else {
+          console.error('Reports request returned non-200 status:', response.status);
+          setError(`Failed to load reports (Status: ${response.status})`);
+          setReportsLoadSuccess(false);
+          setReportsLoading(false);
+        }
       } catch (err) {
         console.error('Error fetching reports:', err);
-        setError('Failed to fetch reports');
+        setError('Failed to fetch reports. Please try again later.');
+        setReportsLoadSuccess(false);
         setReportsLoading(false);
       }
     };
@@ -143,6 +155,11 @@ export default function TeacherGrades() {
   }, []);
 
   const handleSchoolSelect = (schoolName: string) => {
+    // Only allow selection if reports loaded successfully
+    if (!reportsLoadSuccess) {
+      console.log('Cannot select school - reports not loaded successfully');
+      return;
+    }
     console.log('Selecting school:', schoolName);
     setSubmissionsLoading(true);
     setSelectedSchool(schoolName);
@@ -267,13 +284,20 @@ export default function TeacherGrades() {
               <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                 <CircularProgress size={40} thickness={4} />
               </Box>
+            ) : !reportsLoadSuccess ? (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <Typography color="error">
+                  Unable to load reports. Please refresh the page to try again.
+                </Typography>
+              </Box>
             ) : (
               <List className="bg-white shadow-lg rounded-lg">
                 {accessibleSchools.map((schoolName) => (
                   <ListItem key={schoolName} className="border-b last:border-b-0">
                     <ListItemButton
                       onClick={() => handleSchoolSelect(schoolName)}
-                      className="hover:bg-blue-50 transition-colors duration-200 py-4"
+                      disabled={!reportsLoadSuccess}
+                      className="hover:bg-blue-50 transition-colors duration-200 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ListItemText
                         primary={schoolName}
