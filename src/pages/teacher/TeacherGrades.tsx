@@ -40,6 +40,7 @@ export default function TeacherGrades() {
   const [reports, setReports] = useState<Report[]>([]);
   const [accessibleSchools, setAccessibleSchools] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [reportsLoading, setReportsLoading] = useState<boolean>(true);
   const [submissionsLoading, setSubmissionsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
@@ -107,6 +108,7 @@ export default function TeacherGrades() {
     const fetchReports = async () => {
       try {
         console.log('Fetching all reports from endpoint');
+        setReportsLoading(true);
         
         const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
         
@@ -122,11 +124,11 @@ export default function TeacherGrades() {
         }));
 
         setReports(reportsWithSortedSubmissions);
-        setLoading(false);
+        setReportsLoading(false);
       } catch (err) {
         console.error('Error fetching reports:', err);
         setError('Failed to fetch reports');
-        setLoading(false);
+        setReportsLoading(false);
       }
     };
 
@@ -135,7 +137,10 @@ export default function TeacherGrades() {
 
   const handleSchoolSelect = (schoolName: string) => {
     console.log('Selecting school:', schoolName);
+    setSubmissionsLoading(true);
     setSelectedSchool(schoolName);
+    // Reset loading after a short delay to show the data
+    setTimeout(() => setSubmissionsLoading(false), 100);
   };
 
   const handleBackToList = () => {
@@ -254,7 +259,6 @@ export default function TeacherGrades() {
         </Box>
       ) : (
         <div>
-        
           <Box className="mx-4 my-8 max-w-2xl mx-auto">
             <Typography variant="h4" className="text-3xl font-bold text-gray-800 mb-6">
               Select a School
@@ -262,21 +266,27 @@ export default function TeacherGrades() {
             <Typography variant="body2" className="text-gray-600 mb-4">
               Available schools: {accessibleSchools.length}
             </Typography>
-            <List className="bg-white shadow-lg rounded-lg">
-              {accessibleSchools.map((schoolName) => (
-                <ListItem key={schoolName} className="border-b last:border-b-0">
-                  <ListItemButton
-                    onClick={() => handleSchoolSelect(schoolName)}
-                    className="hover:bg-blue-50 transition-colors duration-200 py-4"
-                  >
-                    <ListItemText
-                      primary={schoolName}
-                      className="text-lg font-medium text-gray-700"
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
+            {reportsLoading ? (
+              <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                <CircularProgress size={40} thickness={4} />
+              </Box>
+            ) : (
+              <List className="bg-white shadow-lg rounded-lg">
+                {accessibleSchools.map((schoolName) => (
+                  <ListItem key={schoolName} className="border-b last:border-b-0">
+                    <ListItemButton
+                      onClick={() => handleSchoolSelect(schoolName)}
+                      className="hover:bg-blue-50 transition-colors duration-200 py-4"
+                    >
+                      <ListItemText
+                        primary={schoolName}
+                        className="text-lg font-medium text-gray-700"
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Box>
         </div>
       )}
