@@ -300,7 +300,7 @@ useEffect(() => {
                   <ListItem key={schoolName} className="border-b last:border-b-0">
                     <ListItemButton
                       onClick={() => handleSchoolSelect(schoolName)}
-                      disabled={!reportsLoadSuccess}
+                      disabled={reportsLoadSuccess}
                       className="hover:bg-blue-50 transition-colors duration-200 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ListItemText
