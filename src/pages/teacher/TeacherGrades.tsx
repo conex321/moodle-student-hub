@@ -111,7 +111,6 @@ useEffect(() => {
       console.log('Fetching all reports from endpoint');
       setReportsLoading(true);
       setReportsLoadSuccess(false);
-    setSelectedSchool(null);
 
 
       const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
@@ -159,15 +158,17 @@ useEffect(() => {
 
   const handleSchoolSelect = (schoolName: string) => {
     // Only allow selection if reports loaded successfully
-    if (!reportsLoadSuccess) {
+    console.log("repores: ", reports)
+    if (!reports) {
       console.log('Cannot select school - reports not loaded successfully');
       return;
-    }
+    }else{
     console.log('Selecting school:', schoolName);
     setSubmissionsLoading(true);
     setSelectedSchool(schoolName);
     // Reset loading after a short delay to show the data
     setTimeout(() => setSubmissionsLoading(false), 100);
+  }
   };
 
   const handleBackToList = () => {
