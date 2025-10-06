@@ -44,6 +44,7 @@ export default function TeacherGrades() {
   const [submissionsLoading, setSubmissionsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number>(5);
 
   const handleNavigateToReports = () => {
     navigate("/teacher/reports");
@@ -111,6 +112,23 @@ export default function TeacherGrades() {
     }
   }, [reportsError]);
 
+  // Countdown timer for loading reports
+  useEffect(() => {
+    if (reportsLoading) {
+      setCountdown(5);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [reportsLoading]);
+
 
   const handleSchoolSelect = (schoolName: string) => {
     // Block selection until reports have successfully loaded (status 200)
@@ -154,8 +172,13 @@ export default function TeacherGrades() {
     console.log('Main loading state active (waiting for profile and reports)');
     return (
       <MainLayout requiredRole="teacher">
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight="100vh" gap={2}>
           <CircularProgress size={60} thickness={4} />
+          {reportsLoading && countdown > 0 && (
+            <Typography variant="h6" className="text-gray-600">
+              wait {countdown}
+            </Typography>
+          )}
         </Box>
       </MainLayout>
     );
