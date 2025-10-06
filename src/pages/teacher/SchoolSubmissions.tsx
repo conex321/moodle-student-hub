@@ -16,6 +16,7 @@ import {
   TextField,
   CircularProgress,
 } from '@mui/material';
+import { MainLayout } from "@/components/layout/main-layout";
 
 type Submission = {
   courseId: string;
@@ -48,6 +49,15 @@ interface SchoolSubmissionsProps {
 }
 
 export default function SchoolSubmissions({ report, onBack, onRefresh, loading = false }: SchoolSubmissionsProps) {
+  if(!report.schoolName){
+     return (
+          <MainLayout requiredRole="teacher">
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+              <CircularProgress size={60} thickness={4} />
+            </Box>
+          </MainLayout>
+        );
+  }
   const [page, setPage] = useState<PageState>({ [report.schoolName]: 0 });
   const [rowsPerPage, setRowsPerPage] = useState<RowsPerPageState>({ [report.schoolName]: 5 });
   const [filter, setFilter] = useState<FilterState>({ [report.schoolName]: { submissionName: '', courseId: '' } });
