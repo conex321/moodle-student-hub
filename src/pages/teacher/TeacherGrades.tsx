@@ -105,54 +105,57 @@ export default function TeacherGrades() {
     }
   }, [authState.user?.id, authState.isAuthenticated]);
 
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        console.log('Fetching all reports from endpoint');
-        setReportsLoading(true);
-        setReportsLoadSuccess(false);
-        
-        const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
-        
-        // Only proceed if status is 200
-        if (response.status === 200) {
-          const fetchedReports: Report[] = response.data;
-          console.log('Received reports with status 200:', fetchedReports.length);
+useEffect(() => {
+  const fetchReports = async () => {
+    try {
+      console.log('Fetching all reports from endpoint');
+      setReportsLoading(true);
+      setReportsLoadSuccess(false);
+    setSelectedSchool(null);
 
-          // Filter out any null/undefined reports and sort submissions by date (oldest first)
-          const validReports = (fetchedReports || []).filter((report): report is Report => 
-            report != null && 
-            typeof report === 'object' && 
+
+      const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
+
+      if (response.status === 200) {
+        const fetchedReports: Report[] = response.data;
+        console.log('Received reports with status 200:', fetchedReports.length);
+
+        const validReports = (fetchedReports || []).filter(
+          (report): report is Report =>
+            report != null &&
+            typeof report === 'object' &&
             'schoolName' in report &&
             'submissions' in report
-          );
-          
-          const reportsWithSortedSubmissions = validReports.map(report => ({
-            ...report,
-            submissions: (report.submissions || []).sort((a, b) => 
-              new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
-            )
-          }));
+        );
 
-          setReports(reportsWithSortedSubmissions);
-          setReportsLoadSuccess(true);
-          setReportsLoading(false);
-        } else {
-          console.error('Reports request returned non-200 status:', response.status);
-          setError(`Failed to load reports (Status: ${response.status})`);
-          setReportsLoadSuccess(false);
-          setReportsLoading(false);
-        }
-      } catch (err) {
-        console.error('Error fetching reports:', err);
-        setError('Failed to fetch reports. Please try again later.');
+        const reportsWithSortedSubmissions = validReports.map(report => ({
+          ...report,
+          submissions: (report.submissions || []).sort(
+            (a, b) =>
+              new Date(a.dateSubmitted).getTime() -
+              new Date(b.dateSubmitted).getTime()
+          ),
+        }));
+
+        setReports(reportsWithSortedSubmissions);
+        setReportsLoadSuccess(true);
+      } else {
+        console.error('Reports request returned non-200 status:', response.status);
+        setError(`Failed to load reports (Status: ${response.status})`);
         setReportsLoadSuccess(false);
-        setReportsLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+      setError('Failed to fetch reports. Please try again later.');
+      setReportsLoadSuccess(false);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
 
-    fetchReports();
-  }, []);
+  fetchReports();
+}, []);
+
 
   const handleSchoolSelect = (schoolName: string) => {
     // Only allow selection if reports loaded successfully
