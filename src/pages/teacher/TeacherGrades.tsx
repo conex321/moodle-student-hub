@@ -181,8 +181,8 @@ export default function TeacherGrades() {
     }
   }
 
-  if (loading) {
-    console.log('Main loading state active');
+  if (loading || reportsLoading) {
+    console.log('Main loading state active (profile or reports)');
     return (
       <MainLayout requiredRole="teacher">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
