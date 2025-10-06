@@ -158,16 +158,17 @@ useEffect(() => {
 
   const handleSchoolSelect = (schoolName: string) => {
     // Only allow selection if reports loaded successfully
-    console.log("repores: ", reports)
+    console.log("schoolName: ",schoolName)
+    console.log("respotes: ", reports)
     if (!reports) {
       console.log('Cannot select school - reports not loaded successfully');
       return;
     }else{
     console.log('Selecting school:', schoolName);
-    setSubmissionsLoading(true);
-    setSelectedSchool(schoolName);
-    // Reset loading after a short delay to show the data
-    setTimeout(() => setSubmissionsLoading(false), 100);
+    // setSubmissionsLoading(true);
+    // setSelectedSchool(schoolName);
+    // // Reset loading after a short delay to show the data
+    // setTimeout(() => setSubmissionsLoading(false), 100);
   }
   };
 
@@ -300,7 +301,7 @@ useEffect(() => {
                   <ListItem key={schoolName} className="border-b last:border-b-0">
                     <ListItemButton
                       onClick={() => handleSchoolSelect(schoolName)}
-                      disabled={reportsLoadSuccess}
+                      disabled={!reportsLoadSuccess}
                       className="hover:bg-blue-50 transition-colors duration-200 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ListItemText
