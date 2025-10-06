@@ -48,7 +48,7 @@ export default function TeacherGrades() {
   // Only show the school list when all accessible schools have corresponding reports
   const reportsReady = accessibleSchools.length === 0
     ? true
-    : accessibleSchools.every((school) => reports.some((r) => r.schoolName === school));
+    : accessibleSchools.every((school) => reports.some((r) => r && r.schoolName === school));
 
   const handleNavigateToReports = () => {
     navigate("/teacher/reports");
@@ -120,10 +120,17 @@ export default function TeacherGrades() {
         const fetchedReports: Report[] = response.data;
         console.log('Received reports:', fetchedReports.length);
 
-        // Sort submissions by date (oldest first) for each report
-        const reportsWithSortedSubmissions = fetchedReports.map(report => ({
+        // Filter out any null/undefined reports and sort submissions by date (oldest first)
+        const validReports = (fetchedReports || []).filter((report): report is Report => 
+          report != null && 
+          typeof report === 'object' && 
+          'schoolName' in report &&
+          'submissions' in report
+        );
+        
+        const reportsWithSortedSubmissions = validReports.map(report => ({
           ...report,
-          submissions: report.submissions.sort((a, b) => 
+          submissions: (report.submissions || []).sort((a, b) => 
             new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
           )
         }));
@@ -161,18 +168,19 @@ export default function TeacherGrades() {
       const response = await axios.get('https://ungradedassignmentsendpoint.myeducrm.net/reports');
       
       console.log('Received API response for:', schoolName);
-      const updatedReport = response.data.find((r: Report) => r.schoolName === schoolName);
+      const allReports = response.data || [];
+      const updatedReport = allReports.find((r: Report) => r && r.schoolName === schoolName);
       if (updatedReport) {
         // Sort submissions by date (oldest first)
         const sortedReport = {
           ...updatedReport,
-          submissions: updatedReport.submissions.sort((a, b) => 
+          submissions: (updatedReport.submissions || []).sort((a, b) => 
             new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
           )
         };
         
         setReports((prev) =>
-          prev.map((r) => (r.schoolName === schoolName ? sortedReport : r))
+          prev.map((r) => (r && r.schoolName === schoolName ? sortedReport : r))
         );
       } else {
         console.log('No updated report found for:', schoolName);
