@@ -14,6 +14,7 @@ import {
   Button,
   Box,
   TextField,
+  CircularProgress,
 } from '@mui/material';
 
 type Submission = {
@@ -43,9 +44,10 @@ interface SchoolSubmissionsProps {
   report: Report;
   onBack: () => void;
   onRefresh: () => void;
+  loading?: boolean;
 }
 
-export default function SchoolSubmissions({ report, onBack, onRefresh }: SchoolSubmissionsProps) {
+export default function SchoolSubmissions({ report, onBack, onRefresh, loading = false }: SchoolSubmissionsProps) {
   const [page, setPage] = useState<PageState>({ [report.schoolName]: 0 });
   const [rowsPerPage, setRowsPerPage] = useState<RowsPerPageState>({ [report.schoolName]: 5 });
   const [filter, setFilter] = useState<FilterState>({ [report.schoolName]: { submissionName: '', courseId: '' } });
@@ -120,6 +122,14 @@ export default function SchoolSubmissions({ report, onBack, onRefresh }: SchoolS
     currentPage * currentRowsPerPage,
     (currentPage + 1) * currentRowsPerPage
   );
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress size={60} thickness={4} />
+      </Box>
+    );
+  }
 
   return (
     <Box m={2}>

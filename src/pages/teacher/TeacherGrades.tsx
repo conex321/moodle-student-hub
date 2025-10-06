@@ -231,23 +231,12 @@ export default function TeacherGrades() {
     }
     return (
       <MainLayout requiredRole="teacher">
-        {submissionsLoading ? (
-          <Box 
-            display="flex" 
-            justifyContent="center" 
-            alignItems="center" 
-            minHeight="100vh"
-            sx={{ backgroundColor: 'rgba(255, 255, 255, 0.8)' }}
-          >
-            <CircularProgress size={60} thickness={4} />
-          </Box>
-        ) : (
-          <SchoolSubmissions
-            report={report}
-            onBack={handleBackToList}
-            onRefresh={() => fetchSchoolReport(selectedSchool)}
-          />
-        )}
+        <SchoolSubmissions
+          report={report}
+          onBack={handleBackToList}
+          onRefresh={() => fetchSchoolReport(selectedSchool)}
+          loading={submissionsLoading}
+        />
       </MainLayout>
     );
   }
